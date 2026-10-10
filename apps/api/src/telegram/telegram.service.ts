@@ -212,33 +212,57 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         await ctx.sendChatAction('typing');
         
         const userId = ctx.from.id;
-        if (!this.sessions.has(userId)) this.sessions.set(userId, []);
+        if (!this.sessions.has(userId)) {
+          this.sessions.set(userId, []);
+        }
         const history = this.sessions.get(userId)!;
         
         const contextStr = history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n\n');
         const userPrompt = contextStr.length > 0 
           ? `Conversation History:\n${contextStr}\n\nUSER: ${ctx.message.text}\n\nASSISTANT:` 
-          : ctx.message.text;
+          : `USER: ${ctx.message.text}\n\nASSISTANT:`;
         
-        const modelId = await this.modelRegistryService.resolveModelId('general-text-fallback');
+        // Resolve CONVERSATION_PRIMARY instead of GENERAL_TEXT_FALLBACK
+        const modelId = await this.modelRegistryService.resolveModelId('CONVERSATION_PRIMARY');
         
+        const systemPrompt = `You are AYUSH, a stateful, guided healthcare workflow assistant.
+Your goal is to triage symptoms safely and contextually, not act as a command bot.
+
+RULES:
+- DO NOT tell the user to use /book or /hospitals immediately upon hearing a symptom.
+- DO NOT pretend to diagnose, prescribe, or change dosages.
+- Ask short, one-step follow-up questions to gather context.
+- Use a calm, specific, and progressive tone.
+- Avoid generic apologies and robotic disclaimers.
+
+EMERGENCY LOGIC:
+If the user reports danger signs (e.g., chest pain, breathing difficulty, severe weakness, confusion, fainting, seizure, uncontrolled bleeding, severe allergic swelling, persistent high fever, self-harm intent):
+- Stop the normal flow.
+- Output EXACTLY this tag anywhere in your response: [ACTION: ESCALATE_EMERGENCY]
+- Provide urgent escalation guidance advising them to seek immediate emergency care.
+
+BOOKING LOGIC:
+If sufficient context is gathered and the next safe step is to book a doctor, output EXACTLY this tag: [ACTION: BOOK_APPOINTMENT]
+
+Remember: Keep questions short. Offer quick reply options implicitly if helpful.`;
+
         const response = await this.aiGatewayService.generateText({
           model: modelId,
-          systemPrompt: `You are AYUSH, an advanced predictive healthcare assistant for the AYU platform. 
-          Be conversational, concise, and helpful.
-          If the user wants to book an appointment, you can do it for them by outputting this exact text: 
-          [ACTION: BOOK_APPOINTMENT]
-          If they ask about auto-booking or frequency, analyze their free time and offer to automatically schedule recurring visits for them. 
-          If they agree to auto-book, also output [ACTION: BOOK_APPOINTMENT].`,
+          systemPrompt: systemPrompt,
           userPrompt: userPrompt,
-          maxTokens: 500,
-          temperature: 0.7
+          maxTokens: 300,
+          temperature: 0.5
         });
         
         let aiText = response.text;
         
         // Intercept action commands
-        if (aiText.includes('[ACTION: BOOK_APPOINTMENT]')) {
+        if (aiText.includes('[ACTION: ESCALATE_EMERGENCY]')) {
+          aiText = aiText.replace('[ACTION: ESCALATE_EMERGENCY]', '').trim();
+          aiText = `🚨 **URGENT**\n\n${aiText}`;
+          // Clear history on emergency to break loops
+          this.sessions.set(userId, []);
+        } else if (aiText.includes('[ACTION: BOOK_APPOINTMENT]')) {
           aiText = aiText.replace('[ACTION: BOOK_APPOINTMENT]', '').trim();
           
           try {
@@ -251,7 +275,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
             if (patient && doctor && doctor.clinic) {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
-              tomorrow.setHours(14, 0, 0, 0); // 2:00 PM
+              tomorrow.setHours(10, 0, 0, 0);
               
               await prisma.appointment.create({
                 data: {
@@ -260,12 +284,12 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
                   organizationId: doctor.clinicId,
                   startsAt: tomorrow,
                   endsAt: new Date(tomorrow.getTime() + 30 * 60000),
-                  reason: 'AI Auto-Booked (Predictive)',
+                  reason: 'AI Triaged Appointment',
                   status: 'SCHEDULED'
                 }
               });
               
-              aiText += `\n\n*(System: I have successfully auto-booked a token for you at ${doctor.clinic.name} for tomorrow at 2:00 PM!)*`;
+              aiText += `\n\n*(System: I have safely booked a priority token for you with ${doctor.clinic.name} for tomorrow at 10:00 AM based on your symptoms.)*`;
             }
           } catch (e) {
             this.logger.error('Failed to auto-book', e);
@@ -274,6 +298,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         
         history.push({ role: 'user', content: ctx.message.text });
         history.push({ role: 'assistant', content: aiText });
+        // Keep last 10 messages for short-term conversation state
         if (history.length > 10) history.splice(0, history.length - 10);
         
         await ctx.replyWithMarkdown(aiText);
