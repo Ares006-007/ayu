@@ -1,0 +1,459 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/@prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------
+// Core Models
+// ------------------------------------------------------
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  phone          String?
+  passwordHash   String?
+  externalAuthId String?
+  status         String    @default("ACTIVE") // ACTIVE, SUSPENDED, DELETED
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  memberships    OrganizationMembership[]
+  patientRecord  Patient?
+  doctorRecord   Doctor?
+  
+  telegramLink   TelegramAccountLink?
+  linkTokens     TelegramLinkToken[]
+}
+
+model Organization {
+  id        String   @id @default(uuid())
+  type      String   // CLINIC, PHARMACY, PLATFORM
+  name      String
+  status    String   @default("ACTIVE")
+  timezone  String   @default("UTC")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships   OrganizationMembership[]
+  appointments  Appointment[]
+  prescriptions Prescription[]
+  pharmacy      Pharmacy?
+}
+
+model OrganizationMembership {
+  id             String   @id @default(uuid())
+  organizationId String
+  userId         String
+  role           String   // ADMIN, DOCTOR, PHARMACIST, STAFF
+  permissions    String[] // JSON array of permissions
+  status         String   @default("ACTIVE")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, userId])
+}
+
+// ------------------------------------------------------
+// Roles
+// ------------------------------------------------------
+
+model Patient {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  healthRecordNumber String?  @unique
+  dateOfBirth        DateTime
+  gender             String?
+  primaryClinicId    String?
+  timezone           String   @default("UTC")
+  status             String   @default("ACTIVE")
+
+  user User @relation(fields: [userId], references: [id])
+
+  appointments        Appointment[]
+  consultations       Consultation[]
+  prescriptions       Prescription[]
+  medicationSchedules MedicationSchedule[]
+  reminders           Reminder[]
+  doseEvents          DoseEvent[]
+  consents            ConsentRecord[]
+  orders              PharmacyOrder[]
+  invoices            Invoice[]
+  documents           Document[]
+}
+
+model Doctor {
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  registrationNumber String   @unique
+  specialty          String?
+  clinicId           String?
+  status             String   @default("ACTIVE")
+
+  user User @relation(fields: [userId], references: [id])
+
+  appointments  Appointment[]
+  consultations Consultation[]
+  prescriptions Prescription[]
+}
+
+model Pharmacy {
+  id             String @id @default(uuid())
+  organizationId String @unique
+  licenseNumber  String
+  address        String
+  contactInfo    String // JSON string or text
+  status         String @default("ACTIVE")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  orders    PharmacyOrder[]
+  inventory Inventory[]
+}
+
+// ------------------------------------------------------
+// Clinical Workflows
+// ------------------------------------------------------
+
+model Appointment {
+  id             String   @id @default(uuid())
+  patientId      String
+  doctorId       String
+  organizationId String
+  startsAt       DateTime
+  endsAt         DateTime
+  reason         String?
+  status         String   @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+  reminderPolicy String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient      Patient      @relation(fields: [patientId], references: [id])
+  doctor       Doctor       @relation(fields: [doctorId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  consultations Consultation[]
+}
+
+model Consultation {
+  id            String    @id @default(uuid())
+  appointmentId String
+  patientId     String
+  doctorId      String
+  notes         String?
+  diagnosis     String?
+  status        String    @default("IN_PROGRESS") // IN_PROGRESS, COMPLETED
+  startedAt     DateTime
+  completedAt   DateTime?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  patient     Patient     @relation(fields: [patientId], references: [id])
+  doctor      Doctor      @relation(fields: [doctorId], references: [id])
+
+  prescriptions Prescription[]
+}
+
+model Prescription {
+  id             String    @id @default(uuid())
+  patientId      String
+  doctorId       String
+  consultationId String?
+  organizationId String
+  status         String    @default("DRAFT") // DRAFT, NEEDS_REVIEW, VERIFIED, SENT, CANCELLED
+  verifiedBy     String?   // User ID of the verifier
+  verifiedAt     DateTime?
+  sentAt         DateTime?
+  version        Int       @default(1)
+  cancelledAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  doctor       Doctor        @relation(fields: [doctorId], references: [id])
+  consultation Consultation? @relation(fields: [consultationId], references: [id])
+  organization Organization  @relation(fields: [organizationId], references: [id])
+
+  items  PrescriptionItem[]
+  orders PharmacyOrder[]
+}
+
+model Medicine {
+  id           String  @id @default(uuid())
+  genericName  String
+  brandName    String?
+  strength     String?
+  dosageForm   String?
+  manufacturer String?
+  status       String  @default("ACTIVE")
+
+  prescriptionItems PrescriptionItem[]
+  inventory         Inventory[]
+}
+
+model PrescriptionItem {
+  id                     String    @id @default(uuid())
+  prescriptionId         String
+  medicineId             String
+  medicineNameSnapshot   String
+  strength               String?
+  dosageForm             String?
+  dose                   String
+  frequency              String
+  scheduleDefinition     String // JSON representation of the schedule (e.g. CRON or specific times)
+  foodInstruction        String? // BEFORE_FOOD, AFTER_FOOD, WITH_FOOD
+  startDate              DateTime?
+  endDate                DateTime?
+  durationDays           Int?
+  additionalInstructions String?
+  status                 String    @default("ACTIVE")
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+  medicine     Medicine     @relation(fields: [medicineId], references: [id])
+
+  medicationSchedules MedicationSchedule[]
+  orderItems          PharmacyOrderItem[]
+}
+
+// ------------------------------------------------------
+// Reminders & Adherence
+// ------------------------------------------------------
+
+model MedicationSchedule {
+  id                 String    @id @default(uuid())
+  patientId          String
+  prescriptionItemId String
+  timezone           String
+  scheduleDefinition String // JSON rules
+  startsAt           DateTime
+  endsAt             DateTime?
+  status             String    @default("ACTIVE") // ACTIVE, PAUSED, CANCELLED
+  consentId          String?
+  nextRunAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  patient          Patient          @relation(fields: [patientId], references: [id])
+  prescriptionItem PrescriptionItem @relation(fields: [prescriptionItemId], references: [id])
+
+  reminders Reminder[]
+}
+
+model Reminder {
+  id                   String    @id @default(uuid())
+  patientId            String
+  medicationScheduleId String
+  type                 String // MEDICINE, APPOINTMENT, etc.
+  scheduledFor         DateTime
+  sentAt               DateTime?
+  status               String    @default("PENDING") // PENDING, SENT, FAILED, SUPERSEDED
+  deliveryChannel      String    @default("TELEGRAM")
+  deliveryReference    String?
+  attemptCount         Int       @default(0)
+  lastErrorCode        String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  patient            Patient            @relation(fields: [patientId], references: [id])
+  medicationSchedule MedicationSchedule @relation(fields: [medicationScheduleId], references: [id])
+
+  doseEvents DoseEvent[]
+}
+
+model DoseEvent {
+  id                 String    @id @default(uuid())
+  patientId          String
+  reminderId         String?
+  prescriptionItemId String?
+  eventType          String // TAKEN, SNOOZED, SKIPPED, MISSED
+  eventAt            DateTime
+  snoozedUntil       DateTime?
+  optionalReason     String?
+  source             String // WEB, TELEGRAM, STAFF
+  idempotencyKey     String?   @unique
+  createdAt          DateTime  @default(now())
+
+  patient  Patient   @relation(fields: [patientId], references: [id])
+  reminder Reminder? @relation(fields: [reminderId], references: [id])
+}
+
+model ConsentRecord {
+  id         String    @id @default(uuid())
+  patientId  String
+  type       String // TELEGRAM_LINK, MEDICINE_REMINDERS, etc.
+  status     String    @default("GRANTED") // GRANTED, REVOKED
+  version    Int       @default(1)
+  grantedAt  DateTime  @default(now())
+  revokedAt  DateTime?
+  source     String
+  recordedBy String
+  metadata   String? // JSON
+
+  patient Patient @relation(fields: [patientId], references: [id])
+}
+
+// ------------------------------------------------------
+// Telegram
+// ------------------------------------------------------
+
+model TelegramAccountLink {
+  id                  String    @id @default(uuid())
+  userId              String    @unique
+  telegramUserId      String    @unique
+  telegramChatId      String
+  telegramUsername    String?
+  status              String    @default("LINKED") // LINKED, REVOKED
+  linkedAt            DateTime  @default(now())
+  revokedAt           DateTime?
+  lastInteractionAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model TelegramLinkToken {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ------------------------------------------------------
+// Pharmacy & Invoicing
+// ------------------------------------------------------
+
+model PharmacyOrder {
+  id             String    @id @default(uuid())
+  patientId      String
+  pharmacyId     String
+  prescriptionId String
+  status         String    @default("RECEIVED") // RECEIVED, PREPARING, READY, DISPATCHED, DELIVERED, CANCELLED
+  deliveryMethod String    @default("PICKUP")
+  confirmedAt    DateTime?
+  preparedAt     DateTime?
+  dispatchedAt   DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  patient      Patient      @relation(fields: [patientId], references: [id])
+  pharmacy     Pharmacy     @relation(fields: [pharmacyId], references: [id])
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+
+  items   PharmacyOrderItem[]
+  invoice Invoice?
+}
+
+model PharmacyOrderItem {
+  id                 String  @id @default(uuid())
+  orderId            String
+  prescriptionItemId String
+  medicineId         String
+  requestedQuantity  Int
+  availableQuantity  Int?
+  status             String // AVAILABLE, PARTIALLY_AVAILABLE, UNAVAILABLE, CLARIFICATION_REQUIRED
+  clarificationNote  String?
+
+  order            PharmacyOrder    @relation(fields: [orderId], references: [id])
+  prescriptionItem PrescriptionItem @relation(fields: [prescriptionItemId], references: [id])
+}
+
+model Invoice {
+  id         String    @id @default(uuid())
+  orderId    String    @unique
+  patientId  String
+  pharmacyId String
+  number     String    @unique
+  status     String    @default("DRAFT") // DRAFT, ISSUED, PARTIALLY_PAID, PAID, CANCELLED, REFUNDED
+  subtotal   Int // Stored in minor units (e.g. paise for INR)
+  discount   Int       @default(0)
+  tax        Int       @default(0)
+  total      Int
+  currency   String    @default("INR")
+  issuedAt   DateTime?
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  order    PharmacyOrder @relation(fields: [orderId], references: [id])
+  patient  Patient       @relation(fields: [patientId], references: [id])
+  
+  items    InvoiceItem[]
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  medicineId  String?
+  description String
+  quantity    Int
+  unitPrice   Int // Minor units
+  discount    Int     @default(0)
+  tax         Int     @default(0)
+  total       Int
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Inventory {
+  id           String   @id @default(uuid())
+  pharmacyId   String
+  medicineId   String
+  batchNumber  String
+  expiryDate   DateTime
+  currentStock Int
+  reservedStock Int     @default(0)
+  reorderLevel Int
+  unitPrice    Int // Minor units
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pharmacy Pharmacy @relation(fields: [pharmacyId], references: [id])
+  medicine Medicine @relation(fields: [medicineId], references: [id])
+}
+
+// ------------------------------------------------------
+// Documents & Audit
+// ------------------------------------------------------
+
+model Document {
+  id               String   @id @default(uuid())
+  ownerType        String // PATIENT, ORGANIZATION
+  ownerId          String
+  patientId        String?
+  category         String // LAB_REPORT, SCAN, ID_PROOF
+  storageKey       String   @unique
+  originalFilename String
+  mimeType         String
+  size             Int
+  checksum         String
+  status           String   @default("SCANNED") // UPLOADING, QUARANTINED, SCANNED, AVAILABLE
+  uploadedBy       String
+  createdAt        DateTime @default(now())
+
+  patient Patient? @relation(fields: [patientId], references: [id])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  actorId        String
+  organizationId String?
+  action         String
+  resourceType   String
+  resourceId     String
+  outcome        String // SUCCESS, FAILURE, DENIED
+  requestId      String?
+  ipAddress      String?
+  userAgent      String?
+  metadata       String? // JSON containing safe context data
+  createdAt      DateTime @default(now())
+}
