@@ -13,11 +13,12 @@ import { UsersModule } from './users/users.module.js';
 import { OrganizationsModule } from './organizations/organizations.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { TelegramModule } from './telegram/telegram.module.js';
+import { AiModule } from './ai/ai.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
     Module({
-        imports: [DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, TelegramModule],
+        imports: [DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, TelegramModule, AiModule],
         controllers: [AppController],
         providers: [AppService],
     })

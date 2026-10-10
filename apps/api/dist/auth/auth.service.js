@@ -41,9 +41,7 @@ let AuthService = class AuthService {
             email: user.email,
             roles: ['PATIENT']
         };
-        const accessToken = this.jwtService.sign(payload, {
-            expiresIn: '15m',
-        });
+        const accessToken = this.jwtService.sign(payload);
         const refreshToken = randomBytes(32).toString('hex');
         return {
             access_token: accessToken,

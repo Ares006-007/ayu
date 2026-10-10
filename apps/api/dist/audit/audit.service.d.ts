@@ -18,8 +18,8 @@ export declare class AuditService {
     logEvent(event: AuditEvent): Promise<{
         id: string;
         createdAt: Date;
-        actorId: string;
         organizationId: string | null;
+        actorId: string;
         action: string;
         resourceType: string;
         resourceId: string;

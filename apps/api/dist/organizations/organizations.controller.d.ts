@@ -23,7 +23,7 @@ export declare class OrganizationsController {
             organizationId: string;
             userId: string;
             role: string;
-            permissions: string[];
+            permissions: string;
         })[];
     } & {
         id: string;
