@@ -105,9 +105,9 @@ export default function DoctorOverview() {
                     <TableCell className="hidden md:table-cell text-muted-foreground">{apt.reason}</TableCell>
                     <TableCell><StatusBadge status={apt.status} /></TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button asChild variant="default" size="sm">
-                        <Link href={`/app/doctor/consultation/${apt.id}`}>Start Consultation</Link>
-                      </Button>
+                      <Link href={`/app/doctor/consultation/${apt.id}`}>
+                        <Button variant="default" size="sm">Start Consultation</Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 );
