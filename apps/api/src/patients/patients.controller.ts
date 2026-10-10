@@ -41,4 +41,17 @@ export class PatientsController {
 
     return this.patientsService.getPatientProfile(id);
   }
+
+  @Get(':id/dashboard')
+  @Workspace('patient')
+  async getPatientDashboard(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const meta = { ipAddress: request.ip, userAgent: request.headers['user-agent'] };
+    await this.objectAuth.assertPatientSelfAccess(user, id, meta);
+    
+    return this.patientsService.getPatientDashboard(id);
+  }
 }

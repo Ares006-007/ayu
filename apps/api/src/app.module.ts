@@ -11,9 +11,10 @@ import { AiModule } from './ai/ai.module.js';
 import { PatientsModule } from './patients/patients.module.js';
 
 import { ConfigModule } from '@nestjs/config';
+import { DoctorsModule } from './doctors/doctors.module.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, PatientsModule, TelegramModule, AiModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, PatientsModule, TelegramModule, AiModule, DoctorsModule],
   controllers: [AppController],
   providers: [AppService],
 })

@@ -44,6 +44,51 @@ let PatientsService = class PatientsService {
             status: profile.status,
         };
     }
+    async getPatientDashboard(patientId) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const appointments = await this.prisma.appointment.findMany({
+            where: { patientId },
+            include: {
+                doctor: { include: { user: true } },
+                organization: true
+            },
+            orderBy: { startsAt: 'asc' },
+        });
+        const activePrescriptions = await this.prisma.prescription.findMany({
+            where: { patientId, status: 'ACTIVE' },
+            include: {
+                doctor: { include: { user: true } },
+                items: true
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        const doseEvents = await this.prisma.doseEvent.findMany({
+            where: {
+                patientId,
+                eventAt: {
+                    gte: today,
+                }
+            },
+            orderBy: { eventAt: 'asc' }
+        });
+        const recentReports = await this.prisma.document.findMany({
+            where: { patientId, type: 'LAB_REPORT' },
+            orderBy: { createdAt: 'desc' },
+            take: 2
+        });
+        return {
+            appointments,
+            activePrescriptions,
+            doseEvents: doseEvents.map(d => ({
+                id: d.id,
+                status: d.eventType.toLowerCase(),
+                medicineName: "Medication",
+                scheduledTime: d.eventAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            })),
+            recentReports
+        };
+    }
 };
 PatientsService = __decorate([
     Injectable(),

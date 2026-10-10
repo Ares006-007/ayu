@@ -5,27 +5,48 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import {
-  getTodaysAppointmentsForDoctor, getConsultationsForDoctor,
-  getPrescriptionsForDoctor, getPatientsByDoctor,
-} from "@/lib/api";
-import { patients } from "@/lib/mock-data";
 import Link from "next/link";
-
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 
 export default function DoctorOverview() {
   const { user } = useAuth();
-  const DOCTOR_ID = user?.user.email === "doctor@demo.ayu" ? "doc-1" : "doc-1"; // Realistic scenario would use user.doctorId or similar
+  const DOCTOR_ID = user?.user.doctorId || "doc-1"; 
 
-  const todaysApts = getTodaysAppointmentsForDoctor(DOCTOR_ID);
-  const consultations = getConsultationsForDoctor(DOCTOR_ID);
-  const recentPrescriptions = getPrescriptionsForDoctor(DOCTOR_ID).filter((p) => p.status === "active");
-  const myPatients = getPatientsByDoctor(DOCTOR_ID);
+  const [todaysApts, setTodaysApts] = useState<any[]>([]);
+  const [consultations, setConsultations] = useState<any[]>([]);
+  const [recentPrescriptions, setRecentPrescriptions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const waiting = todaysApts.filter((a) => a.status === "scheduled").length;
-  const inProgress = todaysApts.filter((a) => a.status === "in-progress").length;
-  const completed = todaysApts.filter((a) => a.status === "completed").length;
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [aptsRes, consRes, presRes] = await Promise.all([
+          fetch(`/api/doctors/${DOCTOR_ID}/appointments/today`),
+          fetch(`/api/doctors/${DOCTOR_ID}/consultations`),
+          fetch(`/api/doctors/${DOCTOR_ID}/prescriptions`)
+        ]);
+
+        if (aptsRes.ok) setTodaysApts(await aptsRes.json());
+        if (consRes.ok) setConsultations(await consRes.json());
+        if (presRes.ok) {
+          const pres = await presRes.json();
+          setRecentPrescriptions(pres.filter((p: any) => p.status === 'ACTIVE'));
+        }
+      } catch (err) {
+        console.error("Failed to load doctor dashboard", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [DOCTOR_ID]);
+
+  if (loading) return <div>Loading dashboard...</div>;
+
+  const waiting = todaysApts.filter((a) => a.status === "SCHEDULED").length;
+  const inProgress = todaysApts.filter((a) => a.status === "IN_PROGRESS").length;
+  const completed = todaysApts.filter((a) => a.status === "COMPLETED").length;
 
   const followUps = consultations.filter((c) => c.followUpDate).length;
 
@@ -75,12 +96,12 @@ export default function DoctorOverview() {
             </TableHeader>
             <TableBody>
               {todaysApts.map((apt) => {
-                const patient = patients.find((p) => p.id === apt.patientId);
+                const patientName = apt.patient?.user?.name ?? "—";
                 return (
                   <TableRow key={apt.id}>
-                    <TableCell className="font-medium">{apt.time}</TableCell>
-                    <TableCell>{patient?.name ?? "—"}</TableCell>
-                    <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{apt.type}</TableCell>
+                    <TableCell className="font-medium">{new Date(apt.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                    <TableCell>{patientName}</TableCell>
+                    <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{apt.reason || 'General'}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{apt.reason}</TableCell>
                     <TableCell><StatusBadge status={apt.status} /></TableCell>
                     <TableCell className="text-right space-x-2">
@@ -104,12 +125,12 @@ export default function DoctorOverview() {
         <CardContent>
           <div className="space-y-3">
             {recentPrescriptions.map((prx) => {
-              const patient = myPatients.find((p) => p.id === prx.patientId);
+              const patientName = prx.patient?.user?.name ?? "Patient";
               return (
                 <div key={prx.id} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
                   <div>
-                    <p className="text-sm font-medium">{patient?.name ?? "Patient"}</p>
-                    <p className="text-xs text-muted-foreground">{prx.items.length} medicines · valid until {prx.validUntil}</p>
+                    <p className="text-sm font-medium">{patientName}</p>
+                    <p className="text-xs text-muted-foreground">{prx.items?.length || 0} medicines · valid until {prx.validUntil || 'N/A'}</p>
                   </div>
                   <StatusBadge status={prx.status} />
                 </div>

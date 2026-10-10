@@ -1,36 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { PageHeader } from "@/components/ui/page-header";
-import {
-  getAppointmentsForPatient, getActivePrescriptionsForPatient,
-  getTodaysDoseEvents, getReportsForPatient, getPatient,
-} from "@/lib/api";
 import { Calendar, Pill, FileText, ArrowRight, CheckCircle2, Clock, MapPin, Activity, Users } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
+import { authApi } from "@/lib/auth/api-client";
 
 export default function PatientHome() {
   const { user } = useAuth();
-  const PATIENT_ID = user?.user.email === "patient@demo.ayu" ? "pat-1" : "pat-1"; // Fallback to pat-1 for layout display, but realistically it would use user.patientId
+  const PATIENT_ID = user?.user.patientId || "pat-1";
 
-  let patient = getPatient(PATIENT_ID);
-  if (!patient && user) {
-    patient = { id: user.user.id, name: user.user.name || "Patient", email: user.user.email, role: "patient", phone: "", dateOfBirth: "", gender: "other", bloodGroup: "", allergies: [] };
-  }
+  const [dashboard, setDashboard] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const patientName = patient?.name?.split(" ")[0] || "Patient";
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [dashRes, profRes] = await Promise.all([
+          fetch(`/api/v1/patients/${PATIENT_ID}/dashboard`, { credentials: 'include' }),
+          fetch(`/api/v1/patients/${PATIENT_ID}`, { credentials: 'include' })
+        ]);
 
-  const allAppointments = getAppointmentsForPatient(PATIENT_ID);
-  const upcoming = allAppointments.filter((a) => a.status === "scheduled");
+        if (dashRes.ok) setDashboard(await dashRes.json());
+        if (profRes.ok) setProfile(await profRes.json());
+      } catch (err) {
+        console.error("Failed to load patient dashboard", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, [PATIENT_ID]);
+
+  if (loading) return <div>Loading dashboard...</div>;
+
+  const patientName = profile?.name?.split(" ")[0] || user?.user.name?.split(" ")[0] || "Patient";
+
+  const allAppointments = dashboard?.appointments || [];
+  const upcoming = allAppointments.filter((a: any) => a.status === "SCHEDULED" || a.status === "scheduled");
   const nextApt = upcoming[0];
-  const activePrescriptions = getActivePrescriptionsForPatient(PATIENT_ID);
-  const todaysDoses = getTodaysDoseEvents(PATIENT_ID);
-  const takenCount = todaysDoses.filter((d) => d.status === "taken").length;
-  const pendingCount = todaysDoses.filter((d) => d.status === "pending").length;
-  const recentReports = getReportsForPatient(PATIENT_ID).slice(0, 2);
+  const activePrescriptions = dashboard?.activePrescriptions || [];
+  const todaysDoses = dashboard?.doseEvents || [];
+  const takenCount = todaysDoses.filter((d: any) => d.status === "taken").length;
+  const pendingCount = todaysDoses.filter((d: any) => d.status === "pending").length;
+  const recentReports = dashboard?.recentReports || [];
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";

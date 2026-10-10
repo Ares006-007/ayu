@@ -40,6 +40,11 @@ let PatientsController = class PatientsController {
         }
         return this.patientsService.getPatientProfile(id);
     }
+    async getPatientDashboard(id, user, request) {
+        const meta = { ipAddress: request.ip, userAgent: request.headers['user-agent'] };
+        await this.objectAuth.assertPatientSelfAccess(user, id, meta);
+        return this.patientsService.getPatientDashboard(id);
+    }
 };
 __decorate([
     Get('me'),
@@ -59,6 +64,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], PatientsController.prototype, "getPatient", null);
+__decorate([
+    Get(':id/dashboard'),
+    Workspace('patient'),
+    __param(0, Param('id')),
+    __param(1, CurrentUser()),
+    __param(2, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], PatientsController.prototype, "getPatientDashboard", null);
 PatientsController = __decorate([
     Controller('v1/patients'),
     UseGuards(JwtAuthGuard, WorkspaceGuard),
