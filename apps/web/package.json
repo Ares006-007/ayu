@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node -e \"require('child_process').execSync('node \\\"' + require.resolve('next/dist/bin/next') + '\\\" build', {stdio: 'inherit'})\"",
+    "build": "node build.js",
     "start": "next start",
     "lint": "eslint"
   },
