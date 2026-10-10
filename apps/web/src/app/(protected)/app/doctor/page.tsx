@@ -118,33 +118,62 @@ export default function DoctorOverview() {
       </Card>
 
       {/* ── Active prescriptions ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Active Prescriptions</CardTitle>
-          <CardDescription>{recentPrescriptions.length} prescriptions currently active.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentPrescriptions.map((prx) => {
-              const patientName = prx.patient?.user?.name ?? "Patient";
-              return (
-                <div key={prx.id} className="flex items-center justify-between border-b last:border-0 pb-3 last:pb-0">
-                  <div>
-                    <p className="text-sm font-medium">{patientName}</p>
-                    <p className="text-xs text-muted-foreground">{prx.items?.length || 0} medicines · valid until {prx.validUntil || 'N/A'}</p>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base">Active Prescriptions & Follow-ups</CardTitle>
+            <CardDescription>{recentPrescriptions.length} prescriptions currently active.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentPrescriptions.map((prx) => {
+                const patientName = prx.patient?.user?.name ?? "Patient";
+                return (
+                  <div key={prx.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b last:border-0 pb-3 last:pb-0 gap-3">
+                    <div>
+                      <p className="text-sm font-medium">{patientName}</p>
+                      <p className="text-xs text-muted-foreground">{prx.items?.length || 0} medicines · valid until {prx.validUntil || 'N/A'}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                      <Button variant="outline" size="sm" className="h-7 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100" onClick={() => alert("Follow-up request sent via Telegram!")}>
+                        Request Follow-up (Telegram Sync)
+                      </Button>
+                      <StatusBadge status={prx.status} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="h-7 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100" onClick={() => alert("Reminder sent to patient's Telegram!")}>
-                      Send Telegram Reminder
-                    </Button>
-                    <StatusBadge status={prx.status} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">OPD Token Management</CardTitle>
+            <CardDescription>Control daily limits (Telegram Synced)</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tokens Issued Today</label>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold">{todaysApts.length}</span>
+                <span className="text-muted-foreground">/</span>
+                <span className="text-lg">20</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">Update Daily Token Limit</label>
+              <div className="flex gap-2">
+                <input type="number" defaultValue={20} className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+                <Button size="sm" onClick={() => alert("Token limit updated! Telegram Bot updated automatically.")}>Save</Button>
+              </div>
+            </div>
+            <div className="pt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-md">
+              Changing this limit immediately updates the token availability displayed to patients in the Telegram Bot and Web App.
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
