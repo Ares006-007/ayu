@@ -8,8 +8,8 @@ export declare class LabReportPipelineService {
         status: string;
         createdAt: Date;
         updatedAt: Date;
-        organizationId: string;
         patientId: string | null;
+        organizationId: string;
         useCase: string;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;

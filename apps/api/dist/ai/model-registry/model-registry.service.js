@@ -20,6 +20,36 @@ let ModelRegistryService = ModelRegistryService_1 = class ModelRegistryService {
         this.prisma = prisma;
     }
     async resolveModelId(alias) {
+        const routingTable = {
+            'ORCHESTRATOR_PRIMARY': 'openai/gpt-5-nano',
+            'ORCHESTRATOR_FALLBACK': 'openai/gpt-4o-mini',
+            'FAST_CLASSIFIER': 'openai/gpt-5-nano',
+            'MEDICAL_TEXT_PRIMARY': 'inclusionai/ling-3.0-flash-sante',
+            'MEDICAL_TEXT_REVIEWER': 'openai/gpt-5.5-pro',
+            'MEDICAL_TEXT_FALLBACK': 'openai/gpt-4o-mini',
+            'DOCUMENT_VISION_PRIMARY': 'inclusionai/ling-3.0-flash-vl',
+            'DOCUMENT_VISION_SECONDARY': 'qwen/qwen3-vl-8b-instruct',
+            'DOCUMENT_VISION_REVIEWER': 'z-ai/glm-5v-turbo',
+            'HIGH_RISK_REVIEWER': 'openai/gpt-6-astra',
+            'OPEN_VISION_SECONDARY': 'qwen/qwen3-vl-8b-instruct',
+            'LONG_DOCUMENT_PRIMARY': 'meta/muse-spark-1.2',
+            'LONG_DOCUMENT_FALLBACK': 'google/gemini-3.8-flash',
+            'MEDICINE_NORMALIZATION_PRIMARY': 'inclusionai/ling-3.0-flash-sante',
+            'PHARMACY_REVIEW_PRIMARY': 'inclusionai/ling-3.0-flash-sante',
+            'CONVERSATION_PRIMARY': 'openai/gpt-4o-mini',
+            'CONVERSATION_SECONDARY': 'inclusionai/ling-3.0-flash-sante',
+            'CONVERSATION_FALLBACK': 'cohere/command-a',
+            'GENERAL_TEXT_FALLBACK': 'cohere/command-a',
+            'SAFE_FORMATTER': 'openai/gpt-oss-safeguard-20b',
+            'MULTIMODAL_REVIEWER': 'google/gemini-3.8-flash',
+            'MULTIMODAL_SECONDARY': 'z-ai/glm-5v-turbo',
+            'IMAGING_DRAFT_PRIMARY': 'openai/gpt-5.5-pro',
+            'IMAGING_DRAFT_FALLBACK': 'google/gemini-3.8-flash',
+            'UNSUPPORTED_PRIMARY': 'openai/gpt-5-nano',
+        };
+        if (routingTable[alias]) {
+            return routingTable[alias];
+        }
         const envAliasKey = `AI_MODEL_${alias.toUpperCase().replace(/-/g, '_')}`;
         const modelId = this.aiConfigService.getModelAlias(envAliasKey);
         if (!modelId) {
