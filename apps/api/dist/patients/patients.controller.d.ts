@@ -34,8 +34,10 @@ export declare class PatientsController {
                 user: {
                     id: string;
                     status: string;
-                    email: string;
+                    createdAt: Date;
+                    updatedAt: Date;
                     name: string | null;
+                    email: string;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
@@ -43,46 +45,46 @@ export declare class PatientsController {
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
                     lastLoginAt: Date | null;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;
-                userId: string;
                 status: string;
+                userId: string;
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
             };
             organization: {
                 id: string;
-                timezone: string;
                 status: string;
-                name: string;
                 createdAt: Date;
                 updatedAt: Date;
+                name: string;
+                timezone: string;
                 type: string;
             };
         } & {
             id: string;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
             patientId: string;
             doctorId: string;
             organizationId: string;
             startsAt: Date;
             endsAt: Date;
             reason: string | null;
+            status: string;
             reminderPolicy: string | null;
+            createdAt: Date;
+            updatedAt: Date;
         })[];
         activePrescriptions: ({
             doctor: {
                 user: {
                     id: string;
                     status: string;
-                    email: string;
+                    createdAt: Date;
+                    updatedAt: Date;
                     name: string | null;
+                    email: string;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
@@ -90,13 +92,11 @@ export declare class PatientsController {
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
                     lastLoginAt: Date | null;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;
-                userId: string;
                 status: string;
+                userId: string;
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
@@ -120,12 +120,12 @@ export declare class PatientsController {
             }[];
         } & {
             id: string;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
             patientId: string;
             doctorId: string;
             organizationId: string;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
             consultationId: string | null;
             verifiedBy: string | null;
             verifiedAt: Date | null;
@@ -141,9 +141,9 @@ export declare class PatientsController {
         }[];
         recentReports: {
             id: string;
+            patientId: string | null;
             status: string;
             createdAt: Date;
-            patientId: string | null;
             ownerType: string;
             ownerId: string;
             category: string;
@@ -162,15 +162,15 @@ export declare class PatientsController {
         symptoms: string;
     }, user: AuthenticatedUser, request: Request): Promise<{
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         patientId: string;
         doctorId: string;
         organizationId: string;
         startsAt: Date;
         endsAt: Date;
         reason: string | null;
+        status: string;
         reminderPolicy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     }>;
 }
