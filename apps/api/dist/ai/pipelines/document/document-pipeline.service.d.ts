@@ -4,18 +4,18 @@ export declare class DocumentPipelineService {
     private readonly logger;
     constructor(orchestrator: AiOrchestratorService);
     processDocument(documentId: string, fileBuffer: Buffer, mimeType: string, organizationId: string, requestedBy: string, patientId?: string): Promise<{
-        id: string;
         status: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         patientId: string | null;
         organizationId: string;
         useCase: string;
+        requestedBy: string;
+        documentId: string | null;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;
         reviewerModelAlias: string | null;
-        requestedBy: string;
-        documentId: string | null;
         promptVersion: string | null;
         schemaVersion: string | null;
         gatewayPolicyVersion: string | null;

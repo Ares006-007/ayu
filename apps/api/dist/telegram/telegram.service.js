@@ -144,30 +144,43 @@ let TelegramService = TelegramService_1 = class TelegramService {
         this.bot.on('photo', async (ctx) => {
             try {
                 await ctx.sendChatAction('typing');
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                const caption = ctx.message.caption || '';
+                const caption = ctx.message.caption || 'What is in this medical report?';
                 this.logger.log(`Received photo with caption: ${caption}`);
-                const mockAnalysisMsg = `I've received your clinical report and analyzed the results.\n\n` +
-                    `📄 *Document:* Kidney Function Test (KFT)\n` +
-                    `👨‍⚕️ *Referred By:* Dr. Sachin Patil\n\n` +
-                    `*Preliminary AI Analysis:*\n` +
-                    `✅ BUN, Urea, Creatinine, Calcium, Potassium, and Sodium are all within normal reference ranges.\n` +
-                    `⚠️ *eGFR* is slightly low at *87.08* (Normal is > 90).\n` +
-                    `⚠️ *Uric Acid* is at *7.1* (Normal is 3.5 - 7.2), which is on the higher end.\n\n` +
-                    `I have securely saved these structured results to your AYU health record. Would you like me to book a follow-up appointment with Dr. Sachin Patil?`;
+                const photo = ctx.message.photo[ctx.message.photo.length - 1];
+                const fileLink = await ctx.telegram.getFileLink(photo.file_id);
                 const userId = ctx.from.id;
-                if (!this.sessions.has(userId))
+                if (!this.sessions.has(userId)) {
                     this.sessions.set(userId, []);
+                }
                 const history = this.sessions.get(userId);
+                const modelId = await this.modelRegistryService.resolveModelId('DOCUMENT_VISION_PRIMARY');
+                const systemPrompt = `You are AYU Vision, an expert medical document extraction agent. 
+Analyze the provided medical report image.
+Extract the key findings, out-of-range values, and the doctor's name if present.
+Summarize it cleanly in Markdown.
+If it is not a medical document, politely inform the user.
+WARNING: State clearly that this is an AI extraction and not a medical diagnosis.`;
+                const userPrompt = [
+                    { type: 'text', text: caption },
+                    { type: 'image_url', image_url: { url: fileLink.href } }
+                ];
+                const response = await this.aiGatewayService.generateText({
+                    model: modelId,
+                    systemPrompt: systemPrompt,
+                    userPrompt: userPrompt,
+                    maxTokens: 500,
+                    temperature: 0.2
+                });
+                const aiText = response.text;
                 history.push({ role: 'user', content: `[Uploaded a Lab Report Image: ${caption}]` });
-                history.push({ role: 'assistant', content: mockAnalysisMsg });
+                history.push({ role: 'assistant', content: aiText });
                 if (history.length > 10)
                     history.splice(0, history.length - 10);
-                await ctx.replyWithMarkdown(mockAnalysisMsg);
+                await ctx.replyWithMarkdown(aiText);
             }
             catch (error) {
                 this.logger.error(`Error processing photo: ${error.message}`);
-                await ctx.reply("I'm sorry, I encountered an error while processing your report.");
+                await ctx.reply("I'm sorry, I encountered an error while processing your report image.");
             }
         });
         this.bot.on('text', async (ctx) => {

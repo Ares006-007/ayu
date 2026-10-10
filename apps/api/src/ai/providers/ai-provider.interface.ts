@@ -7,7 +7,7 @@ export interface AIProviderConfig {
 export interface TextGenerationRequest {
   model: string;
   systemPrompt: string;
-  userPrompt: string;
+  userPrompt: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
   maxTokens?: number;
   temperature?: number;
 }

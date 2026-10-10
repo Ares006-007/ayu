@@ -15,18 +15,18 @@ export declare class AiOrchestratorService {
     private readonly logger;
     constructor(prisma: PrismaService, caseModelRouter: CaseModelRouterService, aiGateway: AiGatewayService, promptRegistry: PromptRegistryService, schemaRegistry: SchemaRegistryService, reviewService: AiReviewService);
     processJob(useCase: AIUseCase, organizationId: string, requestedBy: string, context: UseCaseContext): Promise<{
-        id: string;
         status: string;
+        id: string;
         createdAt: Date;
         updatedAt: Date;
         patientId: string | null;
         organizationId: string;
         useCase: string;
+        requestedBy: string;
+        documentId: string | null;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;
         reviewerModelAlias: string | null;
-        requestedBy: string;
-        documentId: string | null;
         promptVersion: string | null;
         schemaVersion: string | null;
         gatewayPolicyVersion: string | null;
