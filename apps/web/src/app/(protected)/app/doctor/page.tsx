@@ -133,7 +133,12 @@ export default function DoctorOverview() {
                     <p className="text-sm font-medium">{patientName}</p>
                     <p className="text-xs text-muted-foreground">{prx.items?.length || 0} medicines · valid until {prx.validUntil || 'N/A'}</p>
                   </div>
-                  <StatusBadge status={prx.status} />
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="h-7 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100" onClick={() => alert("Reminder sent to patient's Telegram!")}>
+                      Send Telegram Reminder
+                    </Button>
+                    <StatusBadge status={prx.status} />
+                  </div>
                 </div>
               );
             })}

@@ -38,11 +38,19 @@ export default function ConsultationPage({ params }: { params: { id: string } })
     setPrescriptions(newP);
   };
 
+  const [syncTelegram, setSyncTelegram] = useState(true);
+
   const handleComplete = async () => {
     setSaving(true);
     // In a real app, we would POST this to the backend API
     await new Promise(r => setTimeout(r, 1000));
     setSaving(false);
+    
+    if (syncTelegram) {
+      alert("Consultation saved & E-Prescription instantly sent to Patient's Telegram Bot!");
+    } else {
+      alert("Consultation saved successfully.");
+    }
     router.push("/app/doctor");
   };
 
@@ -55,11 +63,17 @@ export default function ConsultationPage({ params }: { params: { id: string } })
           title="Live Consultation" 
           description="Patient: Aarav Sharma | Token ID: 62015b8d" 
         />
-        <div className="space-x-4">
-          <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
-          <Button onClick={handleComplete} disabled={saving}>
-            {saving ? "Saving..." : "Complete & Generate E-Prescription"}
-          </Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="space-x-4 flex items-center">
+            <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
+            <Button onClick={handleComplete} disabled={saving}>
+              {saving ? "Saving..." : "Complete & Generate E-Prescription"}
+            </Button>
+          </div>
+          <label className="flex items-center space-x-2 text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full cursor-pointer">
+            <input type="checkbox" checked={syncTelegram} onChange={e => setSyncTelegram(e.target.checked)} className="rounded text-blue-600 border-blue-300 focus:ring-blue-500" />
+            <span>Send directly to patient's Telegram</span>
+          </label>
         </div>
       </div>
 
