@@ -11,7 +11,7 @@ import { useAuth } from "@/components/auth-provider";
 
 export default function DoctorOverview() {
   const { user } = useAuth();
-  const DOCTOR_ID = user?.user.doctorId || "doc-1"; 
+  const DOCTOR_ID = (user?.user as any)?.doctorId || "doc-1"; 
 
   const [todaysApts, setTodaysApts] = useState<any[]>([]);
   const [consultations, setConsultations] = useState<any[]>([]);

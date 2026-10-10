@@ -12,7 +12,7 @@ import { authApi } from "@/lib/auth/api-client";
 
 export default function PatientHome() {
   const { user } = useAuth();
-  const PATIENT_ID = user?.user.patientId || "pat-1";
+  const PATIENT_ID = (user?.user as any)?.patientId || "pat-1";
 
   const [dashboard, setDashboard] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -141,7 +141,7 @@ export default function PatientHome() {
               <p className="text-sm text-muted-foreground">No medicines scheduled for today.</p>
             ) : (
               <div className="space-y-3">
-                {todaysDoses.map((dose) => (
+                {todaysDoses.map((dose: any) => (
                   <div key={dose.id} className="flex items-center justify-between py-2 border-b last:border-0">
                     <div className="flex items-center gap-3">
                       <div className={`flex h-8 w-8 items-center justify-center rounded-full ${dose.status === "taken" ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"}`}>
