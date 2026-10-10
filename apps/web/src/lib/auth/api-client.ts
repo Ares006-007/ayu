@@ -27,7 +27,7 @@ async function request<T>(
   });
 
   if (response.status === 401) {
-    const isLogin = path === '/auth/login';
+    const isLogin = path === '/v1/auth/login';
     const message = isLogin ? 'Invalid email or password.' : 'Your session has expired. Sign in again.';
     throw new ApiError(message, 401, isLogin ? 'INVALID_CREDENTIALS' : 'SESSION_EXPIRED');
   }

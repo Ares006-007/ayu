@@ -6,18 +6,18 @@ export declare class DoctorsController {
         patient: {
             user: {
                 id: string;
-                status: string;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
                 email: string;
+                name: string | null;
                 phone: string | null;
                 passwordHash: string | null;
                 externalAuthId: string | null;
+                status: string;
                 failedLoginAttempts: number;
                 lockedUntil: Date | null;
                 emailVerifiedAt: Date | null;
                 lastLoginAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
@@ -31,33 +31,33 @@ export declare class DoctorsController {
         };
     } & {
         id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
         patientId: string;
         doctorId: string;
-        organizationId: string;
         startsAt: Date;
         endsAt: Date;
         reason: string | null;
-        status: string;
         reminderPolicy: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getConsultations(id: string): Promise<({
         patient: {
             user: {
                 id: string;
-                status: string;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
                 email: string;
+                name: string | null;
                 phone: string | null;
                 passwordHash: string | null;
                 externalAuthId: string | null;
+                status: string;
                 failedLoginAttempts: number;
                 lockedUntil: Date | null;
                 emailVerifiedAt: Date | null;
                 lastLoginAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
@@ -71,31 +71,31 @@ export declare class DoctorsController {
         };
     } & {
         id: string;
+        status: string;
         patientId: string;
         doctorId: string;
-        status: string;
+        startedAt: Date;
+        completedAt: Date | null;
         appointmentId: string;
         notes: string | null;
         diagnosis: string | null;
-        startedAt: Date;
-        completedAt: Date | null;
     })[]>;
     getPrescriptions(id: string): Promise<({
         patient: {
             user: {
                 id: string;
-                status: string;
-                createdAt: Date;
-                updatedAt: Date;
-                name: string | null;
                 email: string;
+                name: string | null;
                 phone: string | null;
                 passwordHash: string | null;
                 externalAuthId: string | null;
+                status: string;
                 failedLoginAttempts: number;
                 lockedUntil: Date | null;
                 emailVerifiedAt: Date | null;
                 lastLoginAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
@@ -126,12 +126,12 @@ export declare class DoctorsController {
         }[];
     } & {
         id: string;
-        patientId: string;
-        doctorId: string;
-        organizationId: string;
         status: string;
         createdAt: Date;
         updatedAt: Date;
+        organizationId: string;
+        patientId: string;
+        doctorId: string;
         consultationId: string | null;
         verifiedBy: string | null;
         verifiedAt: Date | null;
@@ -142,18 +142,18 @@ export declare class DoctorsController {
     getPatients(id: string): Promise<({
         user: {
             id: string;
-            status: string;
-            createdAt: Date;
-            updatedAt: Date;
-            name: string | null;
             email: string;
+            name: string | null;
             phone: string | null;
             passwordHash: string | null;
             externalAuthId: string | null;
+            status: string;
             failedLoginAttempts: number;
             lockedUntil: Date | null;
             emailVerifiedAt: Date | null;
             lastLoginAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
         id: string;

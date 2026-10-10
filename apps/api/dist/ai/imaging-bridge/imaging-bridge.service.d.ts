@@ -17,13 +17,12 @@ export declare class ImagingBridgeService {
         updatedAt: Date;
         organizationId: string;
         patientId: string | null;
-        documentId: string | null;
         useCase: string;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;
         reviewerModelAlias: string | null;
-        requiresHumanReview: boolean;
         requestedBy: string;
+        documentId: string | null;
         promptVersion: string | null;
         schemaVersion: string | null;
         gatewayPolicyVersion: string | null;
@@ -33,5 +32,6 @@ export declare class ImagingBridgeService {
         completedAt: Date | null;
         failureCategory: string | null;
         retryCount: number;
+        requiresHumanReview: boolean;
     }>;
 }
