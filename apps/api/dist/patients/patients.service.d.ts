@@ -15,24 +15,15 @@ export declare class PatientsService {
     }>;
     getPatientDashboard(patientId: string): Promise<{
         appointments: ({
-            organization: {
-                id: string;
-                name: string;
-                status: string;
-                createdAt: Date;
-                updatedAt: Date;
-                timezone: string;
-                type: string;
-            };
             doctor: {
                 user: {
                     id: string;
+                    status: string;
                     email: string;
                     name: string | null;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
-                    status: string;
                     failedLoginAttempts: number;
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
@@ -42,20 +33,29 @@ export declare class PatientsService {
                 };
             } & {
                 id: string;
-                status: string;
                 userId: string;
+                status: string;
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
+            };
+            organization: {
+                id: string;
+                timezone: string;
+                status: string;
+                name: string;
+                createdAt: Date;
+                updatedAt: Date;
+                type: string;
             };
         } & {
             id: string;
             status: string;
             createdAt: Date;
             updatedAt: Date;
-            organizationId: string;
             patientId: string;
             doctorId: string;
+            organizationId: string;
             startsAt: Date;
             endsAt: Date;
             reason: string | null;
@@ -65,12 +65,12 @@ export declare class PatientsService {
             doctor: {
                 user: {
                     id: string;
+                    status: string;
                     email: string;
                     name: string | null;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
-                    status: string;
                     failedLoginAttempts: number;
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
@@ -80,8 +80,8 @@ export declare class PatientsService {
                 };
             } & {
                 id: string;
-                status: string;
                 userId: string;
+                status: string;
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
@@ -108,9 +108,9 @@ export declare class PatientsService {
             status: string;
             createdAt: Date;
             updatedAt: Date;
-            organizationId: string;
             patientId: string;
             doctorId: string;
+            organizationId: string;
             consultationId: string | null;
             verifiedBy: string | null;
             verifiedAt: Date | null;
@@ -139,5 +139,23 @@ export declare class PatientsService {
             checksum: string;
             uploadedBy: string;
         }[];
+    }>;
+    createAppointment(patientId: string, payload: {
+        doctorId: string;
+        date: string;
+        timeSlot: string;
+        symptoms: string;
+    }): Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        patientId: string;
+        doctorId: string;
+        organizationId: string;
+        startsAt: Date;
+        endsAt: Date;
+        reason: string | null;
+        reminderPolicy: string | null;
     }>;
 }

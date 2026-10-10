@@ -33,11 +33,9 @@ export declare class PatientsController {
             doctor: {
                 user: {
                     id: string;
-                    name: string | null;
                     status: string;
-                    createdAt: Date;
-                    updatedAt: Date;
                     email: string;
+                    name: string | null;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
@@ -45,32 +43,34 @@ export declare class PatientsController {
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
                     lastLoginAt: Date | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                 };
             } & {
                 id: string;
-                status: string;
                 userId: string;
+                status: string;
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
             };
             organization: {
                 id: string;
-                type: string;
-                name: string;
-                status: string;
                 timezone: string;
+                status: string;
+                name: string;
                 createdAt: Date;
                 updatedAt: Date;
+                type: string;
             };
         } & {
             id: string;
             status: string;
             createdAt: Date;
             updatedAt: Date;
-            organizationId: string;
             patientId: string;
             doctorId: string;
+            organizationId: string;
             startsAt: Date;
             endsAt: Date;
             reason: string | null;
@@ -80,11 +80,9 @@ export declare class PatientsController {
             doctor: {
                 user: {
                     id: string;
-                    name: string | null;
                     status: string;
-                    createdAt: Date;
-                    updatedAt: Date;
                     email: string;
+                    name: string | null;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
@@ -92,11 +90,13 @@ export declare class PatientsController {
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
                     lastLoginAt: Date | null;
+                    createdAt: Date;
+                    updatedAt: Date;
                 };
             } & {
                 id: string;
-                status: string;
                 userId: string;
+                status: string;
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
@@ -123,9 +123,9 @@ export declare class PatientsController {
             status: string;
             createdAt: Date;
             updatedAt: Date;
-            organizationId: string;
             patientId: string;
             doctorId: string;
+            organizationId: string;
             consultationId: string | null;
             verifiedBy: string | null;
             verifiedAt: Date | null;
@@ -154,5 +154,23 @@ export declare class PatientsController {
             checksum: string;
             uploadedBy: string;
         }[];
+    }>;
+    bookAppointment(id: string, payload: {
+        doctorId: string;
+        date: string;
+        timeSlot: string;
+        symptoms: string;
+    }, user: AuthenticatedUser, request: Request): Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        patientId: string;
+        doctorId: string;
+        organizationId: string;
+        startsAt: Date;
+        endsAt: Date;
+        reason: string | null;
+        reminderPolicy: string | null;
     }>;
 }

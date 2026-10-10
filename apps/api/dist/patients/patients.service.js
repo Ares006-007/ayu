@@ -89,6 +89,20 @@ let PatientsService = class PatientsService {
             recentReports
         };
     }
+    async createAppointment(patientId, payload) {
+        const appointment = await this.prisma.appointment.create({
+            data: {
+                patientId,
+                doctorId: payload.doctorId,
+                appointmentDate: new Date(payload.date),
+                timeSlot: payload.timeSlot,
+                symptoms: payload.symptoms,
+                status: 'SCHEDULED',
+                type: 'OPD_CONSULTATION'
+            }
+        });
+        return appointment;
+    }
 };
 PatientsService = __decorate([
     Injectable(),

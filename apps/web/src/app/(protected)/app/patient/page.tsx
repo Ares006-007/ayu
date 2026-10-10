@@ -62,14 +62,16 @@ export default function PatientHome() {
 
       {/* ── Quick Actions ── */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
-        <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
-          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-            <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
-              <Calendar className="h-6 w-6" />
-            </div>
-            <p className="font-medium text-sm">Book OPD Appointment</p>
-          </CardContent>
-        </Card>
+        <Link href="/app/patient/book" className="block">
+          <Card className="hover:bg-muted/50 cursor-pointer transition-colors h-full">
+            <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+              <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <p className="font-medium text-sm">Book OPD Appointment</p>
+            </CardContent>
+          </Card>
+        </Link>
         <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
           <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
             <div className="p-2 bg-green-100 text-green-600 rounded-full">

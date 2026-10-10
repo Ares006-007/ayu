@@ -10,7 +10,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { WorkspaceGuard } from '../auth/guards/workspace.guard.js';
 import { Workspace } from '../auth/decorators/workspace.decorator.js';
@@ -45,6 +45,11 @@ let PatientsController = class PatientsController {
         await this.objectAuth.assertPatientSelfAccess(user, id, meta);
         return this.patientsService.getPatientDashboard(id);
     }
+    async bookAppointment(id, payload, user, request) {
+        const meta = { ipAddress: request.ip, userAgent: request.headers['user-agent'] };
+        await this.objectAuth.assertPatientSelfAccess(user, id, meta);
+        return this.patientsService.createAppointment(id, payload);
+    }
 };
 __decorate([
     Get('me'),
@@ -74,6 +79,17 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], PatientsController.prototype, "getPatientDashboard", null);
+__decorate([
+    Post(':id/appointments'),
+    Workspace('patient'),
+    __param(0, Param('id')),
+    __param(1, Body()),
+    __param(2, CurrentUser()),
+    __param(3, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object, Object]),
+    __metadata("design:returntype", Promise)
+], PatientsController.prototype, "bookAppointment", null);
 PatientsController = __decorate([
     Controller('v1/patients'),
     UseGuards(JwtAuthGuard, WorkspaceGuard),

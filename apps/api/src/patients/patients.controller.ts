@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards, ForbiddenException } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { WorkspaceGuard } from '../auth/guards/workspace.guard.js';
@@ -53,5 +53,19 @@ export class PatientsController {
     await this.objectAuth.assertPatientSelfAccess(user, id, meta);
     
     return this.patientsService.getPatientDashboard(id);
+  }
+
+  @Post(':id/appointments')
+  @Workspace('patient')
+  async bookAppointment(
+    @Param('id') id: string,
+    @Body() payload: { doctorId: string, date: string, timeSlot: string, symptoms: string },
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const meta = { ipAddress: request.ip, userAgent: request.headers['user-agent'] };
+    await this.objectAuth.assertPatientSelfAccess(user, id, meta);
+    
+    return this.patientsService.createAppointment(id, payload);
   }
 }
