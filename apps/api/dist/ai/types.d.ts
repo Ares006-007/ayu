@@ -12,6 +12,13 @@ export interface RouteResult {
     localParsingFirst: boolean;
     rejectAutomated: boolean;
 }
+export interface UseCaseContext {
+    patientId?: string;
+    documentId?: string;
+    doctorId?: string;
+    organizationId?: string;
+    [key: string]: any;
+}
 export interface PromptDefinition {
     id: string;
     version: string;

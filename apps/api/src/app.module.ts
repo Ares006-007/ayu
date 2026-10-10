@@ -10,8 +10,10 @@ import { TelegramModule } from './telegram/telegram.module.js';
 import { AiModule } from './ai/ai.module.js';
 import { PatientsModule } from './patients/patients.module.js';
 
+import { ConfigModule } from '@nestjs/config';
+
 @Module({
-  imports: [DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, PatientsModule, TelegramModule, AiModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, PatientsModule, TelegramModule, AiModule],
   controllers: [AppController],
   providers: [AppService],
 })

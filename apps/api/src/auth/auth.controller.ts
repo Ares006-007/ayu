@@ -39,7 +39,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly authContextService: AuthContextService,
     private readonly workspaceResolver: WorkspaceResolverService,
-  ) {}
+  ) { }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

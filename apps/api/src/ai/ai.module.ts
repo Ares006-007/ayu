@@ -7,9 +7,13 @@ import { PromptRegistryService } from './prompt-registry/prompt-registry.service
 import { SchemaRegistryService } from './schema-registry/schema-registry.service.js';
 import { OpenAiCompatibleProvider } from './providers/openai-compatible.provider.js';
 import { AiConfigService } from './ai-config.service.js';
+import { AiOrchestratorModule } from './orchestrator/ai-orchestrator.module.js';
+import { DocumentPipelineModule } from './pipelines/document/document-pipeline.module.js';
+import { LabReportPipelineModule } from './pipelines/lab-report/lab-report-pipeline.module.js';
+import { ImagingBridgeModule } from './imaging-bridge/imaging-bridge.module.js';
 
 @Module({
-  imports: [ConfigModule],
+  imports: [ConfigModule, AiOrchestratorModule, DocumentPipelineModule, LabReportPipelineModule, ImagingBridgeModule],
   providers: [
     AiConfigService,
     AiGatewayService, 
@@ -25,7 +29,11 @@ import { AiConfigService } from './ai-config.service.js';
     ModelRegistryService,
     CaseModelRouterService,
     PromptRegistryService,
-    SchemaRegistryService
+    SchemaRegistryService,
+    AiOrchestratorModule,
+    DocumentPipelineModule,
+    LabReportPipelineModule,
+    ImagingBridgeModule
   ]
 })
 export class AiModule {}

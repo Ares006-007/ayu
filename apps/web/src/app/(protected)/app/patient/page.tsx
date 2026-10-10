@@ -8,7 +8,7 @@ import {
   getAppointmentsForPatient, getActivePrescriptionsForPatient,
   getTodaysDoseEvents, getReportsForPatient, getPatient,
 } from "@/lib/api";
-import { Calendar, Pill, FileText, ArrowRight, CheckCircle2, Clock } from "lucide-react";
+import { Calendar, Pill, FileText, ArrowRight, CheckCircle2, Clock, MapPin, Activity, Users } from "lucide-react";
 import Link from "next/link";
 
 const PATIENT_ID = "pat-1";
@@ -34,104 +34,111 @@ export default function PatientHome() {
         description="Here is your health summary for today."
       />
 
-      {/* ── Medicine schedule ── */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-base font-semibold">Today's Medicines</CardTitle>
-          <Link href="/patient/medicines" className="text-sm text-primary hover:underline flex items-center gap-1">
-            View all <ArrowRight className="h-3 w-3" />
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {todaysDoses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No medicines scheduled for today.</p>
-          ) : (
-            <div className="space-y-3">
-              {todaysDoses.map((dose) => (
-                <div key={dose.id} className="flex items-center justify-between py-2 border-b last:border-0">
-                  <div className="flex items-center gap-3">
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-full ${dose.status === "taken" ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"}`}>
-                      {dose.status === "taken" ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{dose.medicineName}</p>
-                      <p className="text-xs text-muted-foreground">{dose.scheduledTime}</p>
-                    </div>
-                  </div>
-                  <StatusBadge status={dose.status} />
-                </div>
-              ))}
-              <div className="flex items-center gap-4 pt-1 text-sm text-muted-foreground">
-                <span>{takenCount} taken</span>
-                <span>{pendingCount} pending</span>
-              </div>
+      {/* ── Quick Actions ── */}
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
+          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+            <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
+              <Calendar className="h-6 w-6" />
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ── Summary cards ── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Next Appointment</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {nextApt ? (
-              <>
-                <p className="text-lg font-semibold">{nextApt.date}</p>
-                <p className="text-sm text-muted-foreground">{nextApt.time} — {nextApt.reason}</p>
-                <Link href="/patient/appointments">
-                  <Button variant="outline" size="sm" className="mt-3 w-full">View Appointments</Button>
-                </Link>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">No upcoming appointments.</p>
-            )}
+            <p className="font-medium text-sm">Book OPD Appointment</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Active Prescriptions</CardTitle>
-            <Pill className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-lg font-semibold">{activePrescriptions.length}</p>
-            <p className="text-sm text-muted-foreground">
-              {activePrescriptions.length > 0 ? `${activePrescriptions.reduce((s, p) => s + p.items.length, 0)} medicines total` : "No active prescriptions"}
-            </p>
-            <Link href="/patient/prescriptions">
-              <Button variant="outline" size="sm" className="mt-3 w-full">View Prescriptions</Button>
-            </Link>
+        <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
+          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+            <div className="p-2 bg-green-100 text-green-600 rounded-full">
+              <MapPin className="h-6 w-6" />
+            </div>
+            <p className="font-medium text-sm">Find Nearby Hospital</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recent Reports</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {recentReports.length > 0 ? (
-              <div className="space-y-2">
-                {recentReports.map((r) => (
-                  <div key={r.id} className="text-sm">
-                    <p className="font-medium">{r.title}</p>
-                    <p className="text-xs text-muted-foreground">{r.date} — {r.labName}</p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No recent reports.</p>
-            )}
-            <Link href="/patient/reports">
-              <Button variant="outline" size="sm" className="mt-3 w-full">View Reports</Button>
-            </Link>
+        <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
+          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+            <div className="p-2 bg-purple-100 text-purple-600 rounded-full">
+              <Activity className="h-6 w-6" />
+            </div>
+            <p className="font-medium text-sm">Log Vitals (Sugar, BP)</p>
+          </CardContent>
+        </Card>
+        <Card className="hover:bg-muted/50 cursor-pointer transition-colors">
+          <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
+            <div className="p-2 bg-orange-100 text-orange-600 rounded-full">
+              <Users className="h-6 w-6" />
+            </div>
+            <p className="font-medium text-sm">Add Family Member</p>
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* ── Vitals & Clinical Levels ── */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-base font-semibold">Latest Vitals</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent className="space-y-4 pt-2">
+            <div className="flex justify-between items-center pb-2 border-b">
+              <div>
+                <p className="text-sm font-medium">Blood Sugar (Fasting)</p>
+                <p className="text-xs text-muted-foreground">Today, 8:00 AM</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-green-600">95 mg/dL</p>
+                <p className="text-xs text-muted-foreground">Normal</p>
+              </div>
+            </div>
+            <div className="flex justify-between items-center pb-2 border-b">
+              <div>
+                <p className="text-sm font-medium">Blood Pressure</p>
+                <p className="text-xs text-muted-foreground">Yesterday, 10:30 AM</p>
+              </div>
+              <div className="text-right">
+                <p className="font-semibold text-yellow-600">130/85 mmHg</p>
+                <p className="text-xs text-muted-foreground">Elevated</p>
+              </div>
+            </div>
+            <Button variant="outline" className="w-full text-sm">View Medical History</Button>
+          </CardContent>
+        </Card>
+
+        {/* ── Medicine schedule ── */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-base font-semibold">Today's Medicines</CardTitle>
+            <Link href="/patient/medicines" className="text-sm text-primary hover:underline flex items-center gap-1">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </CardHeader>
+          <CardContent>
+            {todaysDoses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No medicines scheduled for today.</p>
+            ) : (
+              <div className="space-y-3">
+                {todaysDoses.map((dose) => (
+                  <div key={dose.id} className="flex items-center justify-between py-2 border-b last:border-0">
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full ${dose.status === "taken" ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"}`}>
+                        {dose.status === "taken" ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{dose.medicineName}</p>
+                        <p className="text-xs text-muted-foreground">{dose.scheduledTime}</p>
+                      </div>
+                    </div>
+                    <StatusBadge status={dose.status} />
+                  </div>
+                ))}
+                <div className="flex items-center gap-4 pt-1 text-sm text-muted-foreground">
+                  <span>{takenCount} taken</span>
+                  <span>{pendingCount} pending</span>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
     </div>
   );
 }

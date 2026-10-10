@@ -1,0 +1,41 @@
+import { PrismaService } from '../../database/database.module.js';
+import { CaseModelRouterService } from '../case-model-router/case-model-router.service.js';
+import { AiGatewayService } from '../ai-gateway/ai-gateway.service.js';
+import { PromptRegistryService } from '../prompt-registry/prompt-registry.service.js';
+import { SchemaRegistryService } from '../schema-registry/schema-registry.service.js';
+import { AiReviewService } from '../review/ai-review.service.js';
+import { UseCaseContext, AIUseCase } from '../types.js';
+export declare class AiOrchestratorService {
+    private readonly prisma;
+    private readonly caseModelRouter;
+    private readonly aiGateway;
+    private readonly promptRegistry;
+    private readonly schemaRegistry;
+    private readonly reviewService;
+    private readonly logger;
+    constructor(prisma: PrismaService, caseModelRouter: CaseModelRouterService, aiGateway: AiGatewayService, promptRegistry: PromptRegistryService, schemaRegistry: SchemaRegistryService, reviewService: AiReviewService);
+    processJob(useCase: AIUseCase, organizationId: string, requestedBy: string, context: UseCaseContext): Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        organizationId: string;
+        patientId: string | null;
+        documentId: string | null;
+        useCase: string;
+        primaryModelAlias: string | null;
+        secondaryModelAlias: string | null;
+        reviewerModelAlias: string | null;
+        requiresHumanReview: boolean;
+        requestedBy: string;
+        promptVersion: string | null;
+        schemaVersion: string | null;
+        gatewayPolicyVersion: string | null;
+        authorizationPurpose: string | null;
+        consentReference: string | null;
+        startedAt: Date | null;
+        completedAt: Date | null;
+        failureCategory: string | null;
+        retryCount: number;
+    }>;
+}

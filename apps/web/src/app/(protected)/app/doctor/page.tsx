@@ -67,6 +67,7 @@ export default function DoctorOverview() {
                 <TableHead className="hidden sm:table-cell">Type</TableHead>
                 <TableHead className="hidden md:table-cell">Reason</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -79,6 +80,10 @@ export default function DoctorOverview() {
                     <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{apt.type}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">{apt.reason}</TableCell>
                     <TableCell><StatusBadge status={apt.status} /></TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button variant="outline" size="sm">Details & Diagnostics</Button>
+                      <Button variant="secondary" size="sm">Request History Access</Button>
+                    </TableCell>
                   </TableRow>
                 );
               })}

@@ -126,16 +126,34 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         tomorrow.setDate(tomorrow.getDate() + 1);
         tomorrow.setHours(10, 0, 0, 0);
 
-        // In a real app, we'd look up the patient via the linked Telegram ID.
-        // For this mock, we'll create a dummy patient or just return a mock confirmation.
+        // In a real app, we'd look up the patient via the linked Telegram ID (TelegramAccountLink).
+        // For this demonstration, we'll pick the first available patient to simulate the booking.
+        const patient = await prisma.patient.findFirst();
+        
+        if (!patient) {
+          return ctx.reply('Your account is not linked to any patient record. Please link your account first.');
+        }
         
         const doctor = doctors[0];
+        
+        const appointment = await prisma.appointment.create({
+          data: {
+            patientId: patient.id,
+            doctorId: doctor.id,
+            organizationId: hospital.id,
+            startsAt: tomorrow,
+            endsAt: new Date(tomorrow.getTime() + 30 * 60000), // 30 min duration
+            reason: 'Telegram Booking',
+            status: 'SCHEDULED'
+          }
+        });
         
         const confirmMsg = `✅ *OPD Token Confirmed*\n\n` +
           `🏥 *Hospital:* ${hospital.name}\n` +
           `👨‍⚕️ *Doctor ID:* ${doctor.registrationNumber} (${doctor.specialty})\n` +
           `📅 *Date:* ${tomorrow.toDateString()}\n` +
-          `⏰ *Time:* 10:00 AM\n\n` +
+          `⏰ *Time:* 10:00 AM\n` +
+          `🔖 *Booking ID:* ${appointment.id.split('-')[0]}\n\n` +
           `Please arrive 15 minutes early.`;
 
         await ctx.replyWithMarkdown(confirmMsg);

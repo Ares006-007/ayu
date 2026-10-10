@@ -74,6 +74,14 @@ export interface RouteResult {
 // Prompt Registry Types
 // ──────────────────────────────────────────────────────────────
 
+export interface UseCaseContext {
+  patientId?: string;
+  documentId?: string;
+  doctorId?: string;
+  organizationId?: string;
+  [key: string]: any;
+}
+
 export interface PromptDefinition {
   id: string;
   version: string;

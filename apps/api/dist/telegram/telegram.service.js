@@ -110,12 +110,28 @@ let TelegramService = TelegramService_1 = class TelegramService {
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 tomorrow.setHours(10, 0, 0, 0);
+                const patient = await prisma.patient.findFirst();
+                if (!patient) {
+                    return ctx.reply('Your account is not linked to any patient record. Please link your account first.');
+                }
                 const doctor = doctors[0];
+                const appointment = await prisma.appointment.create({
+                    data: {
+                        patientId: patient.id,
+                        doctorId: doctor.id,
+                        organizationId: hospital.id,
+                        startsAt: tomorrow,
+                        endsAt: new Date(tomorrow.getTime() + 30 * 60000),
+                        reason: 'Telegram Booking',
+                        status: 'SCHEDULED'
+                    }
+                });
                 const confirmMsg = `✅ *OPD Token Confirmed*\n\n` +
                     `🏥 *Hospital:* ${hospital.name}\n` +
                     `👨‍⚕️ *Doctor ID:* ${doctor.registrationNumber} (${doctor.specialty})\n` +
                     `📅 *Date:* ${tomorrow.toDateString()}\n` +
-                    `⏰ *Time:* 10:00 AM\n\n` +
+                    `⏰ *Time:* 10:00 AM\n` +
+                    `🔖 *Booking ID:* ${appointment.id.split('-')[0]}\n\n` +
                     `Please arrive 15 minutes early.`;
                 await ctx.replyWithMarkdown(confirmMsg);
             }
