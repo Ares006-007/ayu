@@ -1,0 +1,50 @@
+FROM python:3.11-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+
+WORKDIR /app
+COPY pyproject.toml .
+# We don't copy uv.lock yet in case it's not generated, we'll sync from pyproject.toml
+
+# Create a virtual environment and sync dependencies
+RUN uv venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN uv sync --no-dev --no-install-workspace
+
+FROM python:3.11-slim
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    libgomp1 \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r ayu && useradd -r -g ayu ayu
+
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="/app/src"
+
+COPY src /app/src
+
+# Give ownership to non-root user
+RUN chown -R ayu:ayu /app
+USER ayu
+
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8000/health/live || exit 1
+
+CMD ["uvicorn", "ayu_imaging.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

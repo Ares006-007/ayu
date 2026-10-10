@@ -1,0 +1,59 @@
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04 as builder
+
+# Install python and build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
+    build-essential \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/usr/local/bin" sh
+
+WORKDIR /app
+COPY pyproject.toml .
+
+# Create a virtual environment and sync dependencies, including optional segmentation packages
+RUN /usr/local/bin/uv venv --python 3.11 /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+RUN /usr/local/bin/uv sync --no-dev --extra segmentation --no-install-workspace
+
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+
+# Install python and runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    libpq5 \
+    libgomp1 \
+    libgl1 \
+    libglib2.0-0 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r ayu && useradd -r -g ayu ayu
+
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="/app/src"
+ENV ENABLE_GPU=true
+
+COPY src /app/src
+
+# Setup models directory with appropriate permissions
+RUN mkdir -p /tmp/models && chown -R ayu:ayu /tmp/models
+# A real deployment would mount models here read-only:
+# VOLUME ["/tmp/models"]
+
+RUN chown -R ayu:ayu /app
+USER ayu
+
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD curl -f http://localhost:8000/health/live || exit 1
+
+CMD ["uvicorn", "ayu_imaging.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]

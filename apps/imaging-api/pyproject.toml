@@ -1,0 +1,89 @@
+[project]
+name = "ayu-imaging"
+version = "0.1.0"
+description = "AYU Medical Imaging Service"
+readme = "README.md"
+requires-python = "==3.11.*"
+
+dependencies = [
+    # Core Service
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "sqlalchemy>=2.0",
+    "alembic>=1.11",
+    "psycopg[binary]>=3.1",
+    "redis>=5.0",
+    "celery>=5.3",
+    "boto3>=1.28",
+    "structlog>=23.1",
+    "httpx>=0.24",
+    "prometheus-client>=0.17",
+    "opentelemetry-api>=1.19",
+    "opentelemetry-sdk>=1.19",
+    
+    # Medical Image Ingestion
+    "pydicom>=2.4",
+    "pylibjpeg>=1.4",
+    "pylibjpeg-libjpeg>=1.3",
+    "pylibjpeg-openjpeg>=1.3",
+    "nibabel>=5.1",
+    "SimpleITK>=2.3",
+    "pynrrd>=1.0",
+    "highdicom>=0.21",
+
+    # Scientific Processing
+    "numpy>=1.24",
+    "scipy>=1.11",
+    "pandas>=2.0",
+    "scikit-image>=0.21",
+
+    # Radiomics
+    "pyradiomics>=3.0; sys_platform != 'win32'",
+
+    # Model Infrastructure
+    "torch>=2.0",
+    "torchvision>=0.15",
+    "monai>=1.3",
+    "nnunetv2>=2.2",
+]
+
+[project.optional-dependencies]
+segmentation = [
+    "TotalSegmentator>=2.0"
+]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "hypothesis",
+    "ruff",
+    "mypy",
+    "bandit",
+    "pip-audit"
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+ignore = ["B008", "BLE001", "F401", "RUF015"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = [
+    "radiomics.*",
+    "nibabel.*",
+    "SimpleITK.*",
+    "pydicom.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
