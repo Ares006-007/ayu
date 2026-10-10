@@ -73,7 +73,7 @@ let PatientsService = class PatientsService {
             orderBy: { eventAt: 'asc' }
         });
         const recentReports = await this.prisma.document.findMany({
-            where: { patientId, type: 'LAB_REPORT' },
+            where: { patientId, category: 'LAB_REPORT' },
             orderBy: { createdAt: 'desc' },
             take: 2
         });
