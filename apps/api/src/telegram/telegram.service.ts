@@ -224,17 +224,59 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         
         const response = await this.aiGatewayService.generateText({
           model: modelId,
-          systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses. If the user wants to book an appointment, tell them to use the /hospitals and /book commands. Answer the user based on the conversation history provided.',
+          systemPrompt: `You are AYUSH, an advanced predictive healthcare assistant for the AYU platform. 
+          Be conversational, concise, and helpful.
+          If the user wants to book an appointment, you can do it for them by outputting this exact text: 
+          [ACTION: BOOK_APPOINTMENT]
+          If they ask about auto-booking or frequency, analyze their free time and offer to automatically schedule recurring visits for them. 
+          If they agree to auto-book, also output [ACTION: BOOK_APPOINTMENT].`,
           userPrompt: userPrompt,
           maxTokens: 500,
           temperature: 0.7
         });
         
+        let aiText = response.text;
+        
+        // Intercept action commands
+        if (aiText.includes('[ACTION: BOOK_APPOINTMENT]')) {
+          aiText = aiText.replace('[ACTION: BOOK_APPOINTMENT]', '').trim();
+          
+          try {
+            const { PrismaClient } = await import('@prisma/client');
+            const prisma = new PrismaClient();
+            
+            const patient = await prisma.patient.findFirst();
+            const doctor = await prisma.doctor.findFirst({ include: { clinic: true } });
+            
+            if (patient && doctor && doctor.clinic) {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              tomorrow.setHours(14, 0, 0, 0); // 2:00 PM
+              
+              await prisma.appointment.create({
+                data: {
+                  patientId: patient.id,
+                  doctorId: doctor.id,
+                  organizationId: doctor.clinicId,
+                  startsAt: tomorrow,
+                  endsAt: new Date(tomorrow.getTime() + 30 * 60000),
+                  reason: 'AI Auto-Booked (Predictive)',
+                  status: 'SCHEDULED'
+                }
+              });
+              
+              aiText += `\n\n*(System: I have successfully auto-booked a token for you at ${doctor.clinic.name} for tomorrow at 2:00 PM!)*`;
+            }
+          } catch (e) {
+            this.logger.error('Failed to auto-book', e);
+          }
+        }
+        
         history.push({ role: 'user', content: ctx.message.text });
-        history.push({ role: 'assistant', content: response.text });
+        history.push({ role: 'assistant', content: aiText });
         if (history.length > 10) history.splice(0, history.length - 10);
         
-        await ctx.reply(response.text);
+        await ctx.replyWithMarkdown(aiText);
       } catch (error) {
         this.logger.error(`Error processing telegram text with AI: ${(error as Error).message}`);
         await ctx.reply("I'm sorry, I'm having trouble processing that request right now.");
