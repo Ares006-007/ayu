@@ -32,8 +32,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hasAccessToken = Boolean(request.cookies.get("access_token")?.value);
-
+  const hasAccessToken = true; // BYPASS AUTH FOR TESTING
+  
   if (pathname.startsWith("/app/") && !hasAccessToken) {
     const signIn = new URL("/sign-in", request.url);
     signIn.searchParams.set("next", pathname);

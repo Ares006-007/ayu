@@ -30,30 +30,21 @@ export declare class PatientsController {
     }>;
     getPatientDashboard(id: string, user: AuthenticatedUser, request: Request): Promise<{
         appointments: ({
-            organization: {
-                id: string;
-                name: string;
-                status: string;
-                createdAt: Date;
-                updatedAt: Date;
-                timezone: string;
-                type: string;
-            };
             doctor: {
                 user: {
                     id: string;
-                    email: string;
                     name: string | null;
+                    status: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    email: string;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
-                    status: string;
                     failedLoginAttempts: number;
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
                     lastLoginAt: Date | null;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;
@@ -62,6 +53,15 @@ export declare class PatientsController {
                 registrationNumber: string;
                 specialty: string | null;
                 clinicId: string | null;
+            };
+            organization: {
+                id: string;
+                type: string;
+                name: string;
+                status: string;
+                timezone: string;
+                createdAt: Date;
+                updatedAt: Date;
             };
         } & {
             id: string;
@@ -80,18 +80,18 @@ export declare class PatientsController {
             doctor: {
                 user: {
                     id: string;
-                    email: string;
                     name: string | null;
+                    status: string;
+                    createdAt: Date;
+                    updatedAt: Date;
+                    email: string;
                     phone: string | null;
                     passwordHash: string | null;
                     externalAuthId: string | null;
-                    status: string;
                     failedLoginAttempts: number;
                     lockedUntil: Date | null;
                     emailVerifiedAt: Date | null;
                     lastLoginAt: Date | null;
-                    createdAt: Date;
-                    updatedAt: Date;
                 };
             } & {
                 id: string;

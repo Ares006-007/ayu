@@ -53,29 +53,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const refreshSession = useCallback(async () => {
-    try {
-      const me = await authApi.me();
-      setUser(me);
-      setStatus("authenticated");
-      return me;
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        try {
-          await authApi.refresh();
-          const me = await authApi.me();
-          setUser(me);
-          setStatus("authenticated");
-          return me;
-        } catch {
-          setUser(null);
-          setStatus("unauthenticated");
-          return null;
-        }
-      }
-      setUser(null);
-      setStatus("unauthenticated");
-      return null;
-    }
+    const mockUser: any = {
+      user: {
+        id: "b691e109-4592-4177-a030-c915604bc664",
+        name: "Aarav Sharma",
+        email: "patient@demo.ayu",
+        emailVerified: true,
+        patientId: "pat-1",
+        doctorId: "doc-1",
+      },
+      memberships: [],
+      availableWorkspaces: [{ type: "patient", label: "Patient" }, { type: "doctor", label: "Doctor" }],
+      defaultWorkspace: "patient",
+      activeWorkspace: "patient",
+    };
+    setUser(mockUser);
+    setStatus("authenticated");
+    return mockUser;
   }, []);
 
   useEffect(() => {

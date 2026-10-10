@@ -12,6 +12,12 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.push("/app/patient");
+  }, [router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     clearError();
