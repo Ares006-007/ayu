@@ -212,6 +212,60 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         await ctx.sendChatAction('typing');
         
         const userId = ctx.from.id;
+        
+        // --- 1. READ-FIRST CONTEXT RESOLVER ---
+        const { PrismaClient } = await import('@prisma/client');
+        const prisma = new PrismaClient();
+        
+        // Find linked user
+        const linkedAccount = await prisma.telegramAccountLink.findUnique({
+          where: { telegramUserId: userId.toString() },
+          include: {
+            user: {
+              include: {
+                patientRecord: {
+                  include: {
+                    appointments: {
+                      where: { startsAt: { gte: new Date() } },
+                      orderBy: { startsAt: 'asc' },
+                      take: 1
+                    },
+                    prescriptions: {
+                      where: { status: 'VERIFIED' },
+                      orderBy: { createdAt: 'desc' },
+                      take: 1,
+                      include: { items: true, doctor: true }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        let systemContextStr = "SYSTEM CONTEXT [READ-FIRST RESOLVER]:\n";
+        if (!linkedAccount || !linkedAccount.user?.patientRecord) {
+          systemContextStr += "- Patient Status: UNLINKED / UNKNOWN (Proceed safely without medical history)\n";
+        } else {
+          const patient = linkedAccount.user.patientRecord;
+          systemContextStr += `- Patient Status: LINKED (Name: ${linkedAccount.user.name})\n`;
+          
+          if (patient.appointments.length > 0) {
+            const nextApt = patient.appointments[0];
+            systemContextStr += `- Next Appointment: ${nextApt.startsAt.toISOString()} (Status: ${nextApt.status})\n`;
+          } else {
+            systemContextStr += `- Next Appointment: NONE\n`;
+          }
+
+          if (patient.prescriptions.length > 0) {
+            const prx = patient.prescriptions[0];
+            systemContextStr += `- Active Verified Prescription: ${prx.items.length} medicines prescribed by Dr. ${prx.doctor?.registrationNumber}\n`;
+          } else {
+            systemContextStr += `- Active Verified Prescription: NONE\n`;
+          }
+        }
+        
+        // --- 2. SESSION STATE ---
         if (!this.sessions.has(userId)) {
           this.sessions.set(userId, []);
         }
@@ -228,7 +282,10 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         const systemPrompt = `You are AYUSH, a stateful, guided healthcare workflow assistant.
 Your goal is to triage symptoms safely and contextually, not act as a command bot.
 
+${systemContextStr}
+
 RULES:
+- READ the SYSTEM CONTEXT above before responding. Ground your answers in this verified context.
 - DO NOT tell the user to use /book or /hospitals immediately upon hearing a symptom.
 - DO NOT pretend to diagnose, prescribe, or change dosages.
 - Ask short, one-step follow-up questions to gather context.
