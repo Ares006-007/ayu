@@ -11,12 +11,18 @@ var TelegramService_1;
 import { Injectable, Logger } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { UsersService } from '../users/users.service.js';
+import { AiGatewayService } from '../ai/ai-gateway/ai-gateway.service.js';
+import { ModelRegistryService } from '../ai/model-registry/model-registry.service.js';
 let TelegramService = TelegramService_1 = class TelegramService {
     usersService;
+    aiGatewayService;
+    modelRegistryService;
     logger = new Logger(TelegramService_1.name);
     bot;
-    constructor(usersService) {
+    constructor(usersService, aiGatewayService, modelRegistryService) {
         this.usersService = usersService;
+        this.aiGatewayService = aiGatewayService;
+        this.modelRegistryService = modelRegistryService;
         const token = process.env.TELEGRAM_BOT_TOKEN;
         if (!token) {
             this.logger.warn('TELEGRAM_BOT_TOKEN is not set. Bot will not start.');
@@ -61,14 +67,33 @@ let TelegramService = TelegramService_1 = class TelegramService {
         this.bot.command('reminders', (ctx) => {
             ctx.reply('You have no pending reminders today. Stay healthy!');
         });
-        this.bot.on('text', (ctx) => {
-            ctx.reply("I'm sorry, I don't understand that command. Type /help for options.");
+        this.bot.on('text', async (ctx) => {
+            if (!ctx.message || !('text' in ctx.message))
+                return;
+            try {
+                await ctx.sendChatAction('typing');
+                const modelId = await this.modelRegistryService.resolveModelId('general-text-fallback');
+                const response = await this.aiGatewayService.generateText({
+                    model: modelId,
+                    systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses.',
+                    userPrompt: ctx.message.text,
+                    maxTokens: 500,
+                    temperature: 0.7
+                });
+                await ctx.reply(response.text);
+            }
+            catch (error) {
+                this.logger.error(`Error processing telegram text with AI: ${error.message}`);
+                await ctx.reply("I'm sorry, I'm having trouble processing that request right now.");
+            }
         });
     }
 };
 TelegramService = TelegramService_1 = __decorate([
     Injectable(),
-    __metadata("design:paramtypes", [UsersService])
+    __metadata("design:paramtypes", [UsersService,
+        AiGatewayService,
+        ModelRegistryService])
 ], TelegramService);
 export { TelegramService };
 //# sourceMappingURL=telegram.service.js.map

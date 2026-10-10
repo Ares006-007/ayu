@@ -1,13 +1,19 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 import { UsersService } from '../users/users.service.js';
+import { AiGatewayService } from '../ai/ai-gateway/ai-gateway.service.js';
+import { ModelRegistryService } from '../ai/model-registry/model-registry.service.js';
 
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
   public bot: Telegraf;
 
-  constructor(private usersService: UsersService) {
+  constructor(
+    private usersService: UsersService,
+    private aiGatewayService: AiGatewayService,
+    private modelRegistryService: ModelRegistryService
+  ) {
     const token = process.env.TELEGRAM_BOT_TOKEN;
     if (!token) {
       this.logger.warn('TELEGRAM_BOT_TOKEN is not set. Bot will not start.');
@@ -65,8 +71,27 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     });
     
     // Catch-all
-    this.bot.on('text', (ctx) => {
-      ctx.reply("I'm sorry, I don't understand that command. Type /help for options.");
+    this.bot.on('text', async (ctx) => {
+      if (!ctx.message || !('text' in ctx.message)) return;
+      
+      try {
+        await ctx.sendChatAction('typing');
+        
+        const modelId = await this.modelRegistryService.resolveModelId('general-text-fallback');
+        
+        const response = await this.aiGatewayService.generateText({
+          model: modelId,
+          systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses.',
+          userPrompt: ctx.message.text,
+          maxTokens: 500,
+          temperature: 0.7
+        });
+        
+        await ctx.reply(response.text);
+      } catch (error) {
+        this.logger.error(`Error processing telegram text with AI: ${(error as Error).message}`);
+        await ctx.reply("I'm sorry, I'm having trouble processing that request right now.");
+      }
     });
   }
 }

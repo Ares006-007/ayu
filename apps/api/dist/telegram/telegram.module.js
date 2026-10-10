@@ -8,11 +8,12 @@ import { Module } from '@nestjs/common';
 import { TelegramService } from './telegram.service.js';
 import { TelegramController } from './telegram.controller.js';
 import { UsersModule } from '../users/users.module.js';
+import { AiModule } from '../ai/ai.module.js';
 let TelegramModule = class TelegramModule {
 };
 TelegramModule = __decorate([
     Module({
-        imports: [UsersModule],
+        imports: [UsersModule, AiModule],
         providers: [TelegramService],
         controllers: [TelegramController],
         exports: [TelegramService],
