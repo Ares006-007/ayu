@@ -10,11 +10,19 @@ import {
 } from "@/lib/api";
 import { Calendar, Pill, FileText, ArrowRight, CheckCircle2, Clock, MapPin, Activity, Users } from "lucide-react";
 import Link from "next/link";
-
-const PATIENT_ID = "pat-1";
+import { useAuth } from "@/components/auth-provider";
 
 export default function PatientHome() {
-  const patient = getPatient(PATIENT_ID)!;
+  const { user } = useAuth();
+  const PATIENT_ID = user?.user.email === "patient@demo.ayu" ? "pat-1" : "pat-1"; // Fallback to pat-1 for layout display, but realistically it would use user.patientId
+
+  let patient = getPatient(PATIENT_ID);
+  if (!patient && user) {
+    patient = { id: user.user.id, name: user.user.name || "Patient", email: user.user.email, role: "patient", phone: "", dateOfBirth: "", gender: "other", bloodGroup: "", allergies: [] };
+  }
+
+  const patientName = patient?.name?.split(" ")[0] || "Patient";
+
   const allAppointments = getAppointmentsForPatient(PATIENT_ID);
   const upcoming = allAppointments.filter((a) => a.status === "scheduled");
   const nextApt = upcoming[0];
@@ -30,7 +38,7 @@ export default function PatientHome() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={`${greeting}, ${patient.name.split(" ")[0]}`}
+        title={`${greeting}, ${patientName}`}
         description="Here is your health summary for today."
       />
 

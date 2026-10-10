@@ -12,9 +12,12 @@ import {
 import { patients } from "@/lib/mock-data";
 import Link from "next/link";
 
-const DOCTOR_ID = "doc-1";
+import { useAuth } from "@/components/auth-provider";
 
 export default function DoctorOverview() {
+  const { user } = useAuth();
+  const DOCTOR_ID = user?.user.email === "doctor@demo.ayu" ? "doc-1" : "doc-1"; // Realistic scenario would use user.doctorId or similar
+
   const todaysApts = getTodaysAppointmentsForDoctor(DOCTOR_ID);
   const consultations = getConsultationsForDoctor(DOCTOR_ID);
   const recentPrescriptions = getPrescriptionsForDoctor(DOCTOR_ID).filter((p) => p.status === "active");

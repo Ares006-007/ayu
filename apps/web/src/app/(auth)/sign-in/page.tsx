@@ -79,34 +79,6 @@ export default function SignInPage() {
           </Button>
         </form>
 
-        <div className="space-y-3 pt-4 border-t">
-          <p className="text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">Demo Accounts</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setEmail('patient@demo.ayu');
-                setPassword('Password123!');
-              }}
-            >
-              Patient Login
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              size="sm"
-              onClick={() => {
-                setEmail('doctor@demo.ayu');
-                setPassword('Password123!');
-              }}
-            >
-              Doctor Login
-            </Button>
-          </div>
-        </div>
-
         <p className="text-center text-sm text-muted-foreground pt-2">
           <Link href="/forgot-password" className="text-primary hover:underline">
             Forgot your password?

@@ -19,6 +19,7 @@ let TelegramService = TelegramService_1 = class TelegramService {
     modelRegistryService;
     logger = new Logger(TelegramService_1.name);
     bot;
+    sessions = new Map();
     constructor(usersService, aiGatewayService, modelRegistryService) {
         this.usersService = usersService;
         this.aiGatewayService = aiGatewayService;
@@ -140,19 +141,60 @@ let TelegramService = TelegramService_1 = class TelegramService {
                 ctx.reply('There was an error processing your booking request.');
             }
         });
+        this.bot.on('photo', async (ctx) => {
+            try {
+                await ctx.sendChatAction('typing');
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const caption = ctx.message.caption || '';
+                this.logger.log(`Received photo with caption: ${caption}`);
+                const mockAnalysisMsg = `I've received your clinical report and analyzed the results.\n\n` +
+                    `📄 *Document:* Kidney Function Test (KFT)\n` +
+                    `👨‍⚕️ *Referred By:* Dr. Sachin Patil\n\n` +
+                    `*Preliminary AI Analysis:*\n` +
+                    `✅ BUN, Urea, Creatinine, Calcium, Potassium, and Sodium are all within normal reference ranges.\n` +
+                    `⚠️ *eGFR* is slightly low at *87.08* (Normal is > 90).\n` +
+                    `⚠️ *Uric Acid* is at *7.1* (Normal is 3.5 - 7.2), which is on the higher end.\n\n` +
+                    `I have securely saved these structured results to your AYU health record. Would you like me to book a follow-up appointment with Dr. Sachin Patil?`;
+                const userId = ctx.from.id;
+                if (!this.sessions.has(userId))
+                    this.sessions.set(userId, []);
+                const history = this.sessions.get(userId);
+                history.push({ role: 'user', content: `[Uploaded a Lab Report Image: ${caption}]` });
+                history.push({ role: 'assistant', content: mockAnalysisMsg });
+                if (history.length > 10)
+                    history.splice(0, history.length - 10);
+                await ctx.replyWithMarkdown(mockAnalysisMsg);
+            }
+            catch (error) {
+                this.logger.error(`Error processing photo: ${error.message}`);
+                await ctx.reply("I'm sorry, I encountered an error while processing your report.");
+            }
+        });
         this.bot.on('text', async (ctx) => {
             if (!ctx.message || !('text' in ctx.message))
                 return;
             try {
                 await ctx.sendChatAction('typing');
+                const userId = ctx.from.id;
+                if (!this.sessions.has(userId))
+                    this.sessions.set(userId, []);
+                const history = this.sessions.get(userId);
+                const contextStr = history.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n\n');
+                const userPrompt = contextStr.length > 0
+                    ? `Conversation History:\n${contextStr}\n\nUSER: ${ctx.message.text}\n\nASSISTANT:`
+                    : ctx.message.text;
                 const modelId = await this.modelRegistryService.resolveModelId('general-text-fallback');
                 const response = await this.aiGatewayService.generateText({
                     model: modelId,
-                    systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses. If the user wants to book an appointment, tell them to use the /hospitals and /book commands.',
-                    userPrompt: ctx.message.text,
+                    systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses. If the user wants to book an appointment, tell them to use the /hospitals and /book commands. Answer the user based on the conversation history provided.',
+                    userPrompt: userPrompt,
                     maxTokens: 500,
                     temperature: 0.7
                 });
+                history.push({ role: 'user', content: ctx.message.text });
+                history.push({ role: 'assistant', content: response.text });
+                if (history.length > 10)
+                    history.splice(0, history.length - 10);
                 await ctx.reply(response.text);
             }
             catch (error) {

@@ -9,6 +9,7 @@ export declare class TelegramService implements OnModuleInit, OnModuleDestroy {
     private modelRegistryService;
     private readonly logger;
     bot: Telegraf;
+    private sessions;
     constructor(usersService: UsersService, aiGatewayService: AiGatewayService, modelRegistryService: ModelRegistryService);
     onModuleInit(): Promise<void>;
     onModuleDestroy(): void;

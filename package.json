@@ -12,7 +12,8 @@
     "lint": "npm run lint --workspaces --if-present"
   },
   "devDependencies": {
-    "ajv": "^8.20.0"
+    "ajv": "^8.20.0",
+    "next": "16.4.0"
   },
   "allowScripts": {
     "@prisma/client@5.22.0": true,
