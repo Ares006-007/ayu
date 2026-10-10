@@ -24,6 +24,7 @@
     "@prisma/client": "^7.10.0"
   },
   "optionalDependencies": {
-    "lightningcss-linux-x64-gnu": "*"
+    "lightningcss-linux-x64-gnu": "*",
+    "@tailwindcss/oxide-linux-x64-gnu": "*"
   }
 }
