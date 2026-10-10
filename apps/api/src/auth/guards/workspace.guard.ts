@@ -31,7 +31,7 @@ export class WorkspaceGuard implements CanActivate {
       throw new ForbiddenException('No active workspace selected.');
     }
 
-    if (!requiredWorkspaces.includes(user.activeWorkspace)) {
+    if (!requiredWorkspaces.includes(user.activeWorkspace as WorkspaceType)) {
       throw new ForbiddenException('You do not have access to this workspace.');
     }
 

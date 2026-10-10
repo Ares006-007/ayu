@@ -11,18 +11,19 @@ export declare class ImagingBridgeService {
         canonicalPath: string;
     }>;
     generateImagingDraft(studyId: string, canonicalPath: string, organizationId: string, requestedBy: string, patientId?: string): Promise<{
-        status: string;
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        patientId: string | null;
         organizationId: string;
-        useCase: string;
-        requestedBy: string;
+        patientId: string | null;
         documentId: string | null;
+        useCase: string;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;
         reviewerModelAlias: string | null;
+        requiresHumanReview: boolean;
+        requestedBy: string;
         promptVersion: string | null;
         schemaVersion: string | null;
         gatewayPolicyVersion: string | null;
@@ -32,6 +33,5 @@ export declare class ImagingBridgeService {
         completedAt: Date | null;
         failureCategory: string | null;
         retryCount: number;
-        requiresHumanReview: boolean;
     }>;
 }

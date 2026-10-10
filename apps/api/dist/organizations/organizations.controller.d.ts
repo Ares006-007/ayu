@@ -8,10 +8,10 @@ export declare class OrganizationsController {
     constructor(orgService: OrganizationsService, auditService: AuditService);
     findAll(user: AuthenticatedUser): Promise<{
         id: string;
-        type: string;
         name: string;
         status: string;
         timezone: string;
+        type: string;
     }[]>;
     findOne(id: string, user: AuthenticatedUser, request: Request): Promise<{
         memberships: ({
@@ -24,18 +24,18 @@ export declare class OrganizationsController {
             status: string;
             createdAt: Date;
             updatedAt: Date;
-            organizationId: string;
             userId: string;
+            organizationId: string;
             role: string;
             permissions: string;
         })[];
     } & {
         id: string;
-        type: string;
         name: string;
         status: string;
-        timezone: string;
         createdAt: Date;
         updatedAt: Date;
+        timezone: string;
+        type: string;
     }>;
 }

@@ -34,7 +34,7 @@ let ObjectAuthorizationService = class ObjectAuthorizationService {
             where: {
                 patientId,
                 doctorId: user.doctorId,
-                organizationId: user.activeOrganizationId,
+                organizationId: user.activeOrganizationId ?? undefined,
             },
             select: { id: true },
         });

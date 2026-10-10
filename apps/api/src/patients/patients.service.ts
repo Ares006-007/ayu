@@ -90,15 +90,19 @@ export class PatientsService {
   }
 
   async createAppointment(patientId: string, payload: { doctorId: string, date: string, timeSlot: string, symptoms: string }) {
+    const doctor = await this.prisma.doctor.findUnique({ where: { id: payload.doctorId } });
+    const startsAt = new Date(payload.date);
+    const endsAt = new Date(startsAt.getTime() + 30 * 60000); // 30 minutes duration
+    
     const appointment = await this.prisma.appointment.create({
       data: {
         patientId,
         doctorId: payload.doctorId,
-        appointmentDate: new Date(payload.date),
-        timeSlot: payload.timeSlot,
-        symptoms: payload.symptoms,
+        organizationId: doctor?.clinicId || '',
+        startsAt,
+        endsAt,
+        reason: payload.symptoms,
         status: 'SCHEDULED',
-        type: 'OPD_CONSULTATION'
       }
     });
     return appointment;

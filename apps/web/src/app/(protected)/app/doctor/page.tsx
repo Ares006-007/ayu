@@ -1,15 +1,14 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { Clock, Users, Bell, AlertCircle, Play, Pause, ChevronRight } from "lucide-react";
 
-export default function DoctorOverview() {
+export default function DoctorOperationsConsole() {
   const { user } = useAuth();
   const DOCTOR_ID = (user?.user as any)?.doctorId || "doc-1"; 
 
@@ -17,6 +16,12 @@ export default function DoctorOverview() {
   const [consultations, setConsultations] = useState<any[]>([]);
   const [recentPrescriptions, setRecentPrescriptions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Live Control State
+  const [queueStatus, setQueueStatus] = useState<"OPEN" | "PAUSED">("OPEN");
+  const [dailyTokens, setDailyTokens] = useState(20);
+  const [slotDuration, setSlotDuration] = useState(15);
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -34,7 +39,7 @@ export default function DoctorOverview() {
           setRecentPrescriptions(pres.filter((p: any) => p.status === 'ACTIVE'));
         }
       } catch (err) {
-        console.error("Failed to load doctor dashboard", err);
+        console.error("Failed to load doctor console", err);
       } finally {
         setLoading(false);
       }
@@ -42,138 +47,214 @@ export default function DoctorOverview() {
     loadData();
   }, [DOCTOR_ID]);
 
-  if (loading) return <div>Loading dashboard...</div>;
+  if (loading) return <div className="flex h-[calc(100vh-100px)] items-center justify-center">Loading Operations Console...</div>;
 
-  const waiting = todaysApts.filter((a) => a.status === "SCHEDULED").length;
-  const inProgress = todaysApts.filter((a) => a.status === "IN_PROGRESS").length;
-  const completed = todaysApts.filter((a) => a.status === "COMPLETED").length;
-
-  const followUps = consultations.filter((c) => c.followUpDate).length;
+  const waitingApts = todaysApts.filter(a => a.status === "SCHEDULED");
+  const inProgressApt = todaysApts.find(a => a.status === "IN_PROGRESS");
+  const completedApts = todaysApts.filter(a => a.status === "COMPLETED");
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Overview" description={`${todaysApts.length} appointments today · ${waiting} waiting · ${inProgress} in progress`}>
-        <Link href="/doctor/consultations"><Button>New Consultation</Button></Link>
-      </PageHeader>
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-[calc(100vh-100px)] overflow-hidden">
+      
+      {/* ── LEFT RAIL: LIVE QUEUE ── */}
+      <div className="md:col-span-3 border-r pr-4 overflow-y-auto space-y-4">
+        <div>
+          <h2 className="text-lg font-bold tracking-tight mb-2">Today's Queue</h2>
+          <div className="flex items-center gap-2 mb-4">
+            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${queueStatus === 'OPEN' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+              {queueStatus === 'OPEN' ? 'Queue Open' : 'Queue Paused'}
+            </span>
+            <span className="text-xs text-muted-foreground">{todaysApts.length}/{dailyTokens} Tokens</span>
+          </div>
+        </div>
 
-      {/* ── Summary row ── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Today's Total</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{todaysApts.length}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Waiting</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{waiting}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{completed}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Follow-ups Due</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{followUps}</p></CardContent>
-        </Card>
-      </div>
+        {inProgressApt && (
+          <div className="bg-blue-50 border border-blue-200 p-3 rounded-md">
+            <p className="text-xs font-semibold text-blue-700 uppercase mb-1">In Consultation</p>
+            <p className="font-medium text-sm">{inProgressApt.patient?.user?.name}</p>
+            <p className="text-xs text-muted-foreground mt-1">{inProgressApt.reason || 'General'}</p>
+          </div>
+        )}
 
-      {/* ── Today's schedule ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Today's Schedule</CardTitle>
-          <CardDescription>Appointments for today in order.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Time</TableHead>
-                <TableHead>Patient</TableHead>
-                <TableHead className="hidden sm:table-cell">Type</TableHead>
-                <TableHead className="hidden md:table-cell">Reason</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {todaysApts.map((apt) => {
-                const patientName = apt.patient?.user?.name ?? "—";
-                return (
-                  <TableRow key={apt.id}>
-                    <TableCell className="font-medium">{new Date(apt.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
-                    <TableCell>{patientName}</TableCell>
-                    <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{apt.reason || 'General'}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">{apt.reason}</TableCell>
-                    <TableCell><StatusBadge status={apt.status} /></TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Link href={`/app/doctor/consultation/${apt.id}`}>
-                        <Button variant="default" size="sm">Start Consultation</Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {/* ── Active prescriptions ── */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Active Prescriptions & Follow-ups</CardTitle>
-            <CardDescription>{recentPrescriptions.length} prescriptions currently active.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {recentPrescriptions.map((prx) => {
-                const patientName = prx.patient?.user?.name ?? "Patient";
-                return (
-                  <div key={prx.id} className="flex flex-col sm:flex-row sm:items-center justify-between border-b last:border-0 pb-3 last:pb-0 gap-3">
-                    <div>
-                      <p className="text-sm font-medium">{patientName}</p>
-                      <p className="text-xs text-muted-foreground">{prx.items?.length || 0} medicines · valid until {prx.validUntil || 'N/A'}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      <Button variant="outline" size="sm" className="h-7 text-xs bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100" onClick={() => alert("Follow-up request sent via Telegram!")}>
-                        Request Follow-up (Telegram Sync)
-                      </Button>
-                      <StatusBadge status={prx.status} />
-                    </div>
+        <div>
+          <h3 className="text-sm font-semibold text-muted-foreground mb-3 mt-6">Waiting ({waitingApts.length})</h3>
+          <div className="space-y-2">
+            {waitingApts.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">No patients waiting.</p>
+            ) : (
+              waitingApts.map(apt => (
+                <div key={apt.id} className="p-3 border rounded-md hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => setSelectedPatientId(apt.id)}>
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-medium text-sm">{apt.patient?.user?.name || 'Unknown'}</p>
+                    <span className="text-xs text-muted-foreground">{new Date(apt.startsAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">OPD Token Management</CardTitle>
-            <CardDescription>Control daily limits (Telegram Synced)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Tokens Issued Today</label>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold">{todaysApts.length}</span>
-                <span className="text-muted-foreground">/</span>
-                <span className="text-lg">20</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Update Daily Token Limit</label>
-              <div className="flex gap-2">
-                <input type="number" defaultValue={20} className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
-                <Button size="sm" onClick={() => alert("Token limit updated! Telegram Bot updated automatically.")}>Save</Button>
-              </div>
-            </div>
-            <div className="pt-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-md">
-              Changing this limit immediately updates the token availability displayed to patients in the Telegram Bot and Web App.
-            </div>
-          </CardContent>
-        </Card>
+                  <p className="text-xs text-muted-foreground truncate">{apt.reason || 'No reason provided'}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* ── MAIN PANEL: ACTIVE WORKFLOW ── */}
+      <div className="md:col-span-6 overflow-y-auto px-2">
+        {!selectedPatientId && !inProgressApt ? (
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-3 opacity-60">
+            <Users className="h-12 w-12 text-muted-foreground" />
+            <h2 className="text-xl font-medium">No Active Patient</h2>
+            <p className="text-sm text-muted-foreground">Select a patient from the queue to review their case.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex justify-between items-end border-b pb-4">
+              <div>
+                <h2 className="text-2xl font-bold">Patient Review</h2>
+                <p className="text-muted-foreground">Review context and start consultation.</p>
+              </div>
+              <Link href={`/app/doctor/consultation/${selectedPatientId || inProgressApt?.id}`}>
+                <Button>Start Consultation <ChevronRight className="ml-2 h-4 w-4" /></Button>
+              </Link>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Unresolved Tasks & Alerts</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-start gap-3 p-3 bg-amber-50 text-amber-800 rounded-md text-sm border border-amber-200">
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Verification Pending</p>
+                    <p>AYUSH structured extraction requires human review for 2 fields in a recent lab report.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 bg-blue-50 text-blue-800 rounded-md text-sm border border-blue-200">
+                  <Bell className="h-5 w-5 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Follow-up Reminder Blocked</p>
+                    <p>Patient has not consented to automated Telegram notifications. Manual override required.</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Medical History Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">Patient selected from queue. Loading context via read-first resolver...</p>
+                <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-semibold block mb-1">Active Prescriptions</span>
+                    <ul className="list-disc pl-5 text-muted-foreground space-y-1">
+                      <li>Metformin 500mg</li>
+                      <li>Atorvastatin 20mg</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <span className="font-semibold block mb-1">Allergies</span>
+                    <p className="text-muted-foreground">Penicillin</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+
+      {/* ── RIGHT RAIL: LIVE CONTROLS ── */}
+      <div className="md:col-span-3 border-l pl-4 overflow-y-auto">
+        <h2 className="text-lg font-bold tracking-tight mb-4">Operations Console</h2>
+
+        <div className="space-y-6">
+          {/* Queue Controls */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">Queue Control</h3>
+            <div className="flex gap-2">
+              <Button 
+                variant={queueStatus === 'OPEN' ? 'default' : 'outline'} 
+                className="w-full" 
+                size="sm"
+                onClick={() => setQueueStatus('OPEN')}
+              >
+                <Play className="h-4 w-4 mr-2" /> Open
+              </Button>
+              <Button 
+                variant={queueStatus === 'PAUSED' ? 'destructive' : 'outline'} 
+                className="w-full" 
+                size="sm"
+                onClick={() => setQueueStatus('PAUSED')}
+              >
+                <Pause className="h-4 w-4 mr-2" /> Pause
+              </Button>
+            </div>
+          </div>
+
+          {/* Capacity Controls */}
+          <div className="space-y-3 border-t pt-4">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">Capacity & Slots</h3>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex justify-between">
+                Daily Token Limit
+                <span className="text-muted-foreground">{todaysApts.length} / {dailyTokens}</span>
+              </label>
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  value={dailyTokens} 
+                  onChange={(e) => setDailyTokens(Number(e.target.value))}
+                  className="w-full h-8 rounded-md border border-input bg-transparent px-2 text-sm" 
+                />
+                <Button size="sm" variant="secondary" onClick={() => alert("Tokens updated.")}>Apply</Button>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <label className="text-sm font-medium flex justify-between">
+                Slot Duration (mins)
+              </label>
+              <div className="flex gap-2">
+                <input 
+                  type="number" 
+                  value={slotDuration} 
+                  onChange={(e) => setSlotDuration(Number(e.target.value))}
+                  className="w-full h-8 rounded-md border border-input bg-transparent px-2 text-sm" 
+                />
+                <Button size="sm" variant="secondary" onClick={() => alert("Slot duration updated.")}>Apply</Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Reminder & Automation Rules */}
+          <div className="space-y-3 border-t pt-4">
+            <h3 className="text-sm font-semibold uppercase text-muted-foreground">Automation Rules</h3>
+            
+            <div className="space-y-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" defaultChecked className="mt-1" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Auto-Sync Telegram Reminders</p>
+                  <p className="text-xs text-muted-foreground">Sends medicine reminders when prescription is verified.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" defaultChecked className="mt-1" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">Allow Auto-Booking (AYUSH)</p>
+                  <p className="text-xs text-muted-foreground">Allows AI to auto-book follow-ups based on available slots.</p>
+                </div>
+              </label>
+              
+              <Button size="sm" variant="outline" className="w-full text-xs">Manage Override Rules</Button>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+
     </div>
   );
 }

@@ -4,18 +4,19 @@ export declare class DocumentPipelineService {
     private readonly logger;
     constructor(orchestrator: AiOrchestratorService);
     processDocument(documentId: string, fileBuffer: Buffer, mimeType: string, organizationId: string, requestedBy: string, patientId?: string): Promise<{
-        status: string;
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        patientId: string | null;
         organizationId: string;
-        useCase: string;
-        requestedBy: string;
+        patientId: string | null;
         documentId: string | null;
+        useCase: string;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;
         reviewerModelAlias: string | null;
+        requiresHumanReview: boolean;
+        requestedBy: string;
         promptVersion: string | null;
         schemaVersion: string | null;
         gatewayPolicyVersion: string | null;
@@ -25,6 +26,5 @@ export declare class DocumentPipelineService {
         completedAt: Date | null;
         failureCategory: string | null;
         retryCount: number;
-        requiresHumanReview: boolean;
     }>;
 }

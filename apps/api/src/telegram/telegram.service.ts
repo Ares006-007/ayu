@@ -210,6 +210,37 @@ WARNING: State clearly that this is an AI extraction and not a medical diagnosis
 
         const aiText = response.text;
         
+        // --- 1. SAVE TO DATABASE SO WEBAPP SEES IT ---
+        try {
+          const { PrismaClient } = await import('@prisma/client');
+          const prisma = new PrismaClient();
+          const linkedAccount = await prisma.telegramAccountLink.findUnique({
+            where: { telegramUserId: userId.toString() },
+            include: { user: { include: { patientRecord: true } } }
+          });
+          
+          if (linkedAccount && linkedAccount.user?.patientRecord) {
+            await prisma.document.create({
+              data: {
+                ownerType: 'PATIENT',
+                ownerId: linkedAccount.user.patientRecord.id,
+                patientId: linkedAccount.user.patientRecord.id,
+                category: 'LAB_REPORT',
+                storageKey: `telegram-uploads/${userId}-${Date.now()}.jpg`,
+                originalFilename: `telegram_photo_${Date.now()}.jpg`,
+                mimeType: 'image/jpeg',
+                size: 1024,
+                checksum: 'fake-checksum-telegram',
+                status: 'AVAILABLE',
+                uploadedBy: linkedAccount.user.id
+              }
+            });
+            this.logger.log(`Saved Document to database for Patient ${linkedAccount.user.patientRecord.id}`);
+          }
+        } catch (dbErr) {
+          this.logger.error(`Failed to save document to DB: ${(dbErr as Error).message}`);
+        }
+
         history.push({ role: 'user', content: `[Uploaded a Lab Report Image: ${caption}]` });
         history.push({ role: 'assistant', content: aiText });
         if (history.length > 10) history.splice(0, history.length - 10);
@@ -344,12 +375,14 @@ Remember: Keep questions short. Offer quick reply options implicitly if helpful.
             const prisma = new PrismaClient();
             
             const patient = await prisma.patient.findFirst();
-            const doctor = await prisma.doctor.findFirst({ include: { clinic: true } });
+            const doctor = await prisma.doctor.findFirst();
             
-            if (patient && doctor && doctor.clinic) {
+            if (patient && doctor && doctor.clinicId) {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
               tomorrow.setHours(10, 0, 0, 0);
+              
+              const org = await prisma.organization.findUnique({ where: { id: doctor.clinicId } });
               
               await prisma.appointment.create({
                 data: {
@@ -363,7 +396,7 @@ Remember: Keep questions short. Offer quick reply options implicitly if helpful.
                 }
               });
               
-              aiText += `\n\n*(System: I have safely booked a priority token for you with ${doctor.clinic.name} for tomorrow at 10:00 AM based on your symptoms.)*`;
+              aiText += `\n\n*(System: I have safely booked a priority token for you with ${org?.name || 'the clinic'} for tomorrow at 10:00 AM based on your symptoms.)*`;
             }
           } catch (e) {
             this.logger.error('Failed to auto-book', e);

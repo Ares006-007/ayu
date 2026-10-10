@@ -4,18 +4,19 @@ export declare class LabReportPipelineService {
     private readonly logger;
     constructor(orchestrator: AiOrchestratorService);
     processLabReport(documentId: string, extractedText: string, organizationId: string, requestedBy: string, patientId?: string): Promise<{
-        status: string;
         id: string;
+        status: string;
         createdAt: Date;
         updatedAt: Date;
-        patientId: string | null;
         organizationId: string;
-        useCase: string;
-        requestedBy: string;
+        patientId: string | null;
         documentId: string | null;
+        useCase: string;
         primaryModelAlias: string | null;
         secondaryModelAlias: string | null;
         reviewerModelAlias: string | null;
+        requiresHumanReview: boolean;
+        requestedBy: string;
         promptVersion: string | null;
         schemaVersion: string | null;
         gatewayPolicyVersion: string | null;
@@ -25,7 +26,6 @@ export declare class LabReportPipelineService {
         completedAt: Date | null;
         failureCategory: string | null;
         retryCount: number;
-        requiresHumanReview: boolean;
     } | {
         status: string;
         method: string;
