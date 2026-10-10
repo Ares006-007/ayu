@@ -5,24 +5,28 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { PageHeader } from "@/components/ui/page-header";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Clock, Ticket, Building2, Users } from "lucide-react";
+
+const DEPARTMENTS = [
+  { id: "gen", name: "General Medicine", doctor: "Dr. Emily Chen", openTime: "09:00 AM", closeTime: "05:00 PM", tokensLeft: 12, estWait: "45 mins" },
+  { id: "cardio", name: "Cardiology", doctor: "Dr. Sarah Jenkins", openTime: "10:00 AM", closeTime: "04:00 PM", tokensLeft: 4, estWait: "1 hr 20 mins" },
+  { id: "ortho", name: "Orthopedics", doctor: "Dr. Michael Chang", openTime: "09:00 AM", closeTime: "02:00 PM", tokensLeft: 0, estWait: "Fully Booked" },
+  { id: "ped", name: "Pediatrics", doctor: "Dr. James Wilson", openTime: "11:00 AM", closeTime: "06:00 PM", tokensLeft: 18, estWait: "15 mins" },
+];
 
 export default function BookAppointment() {
   const router = useRouter();
   const { user } = useAuth();
   const PATIENT_ID = (user?.user as any)?.patientId || "pat-1";
 
-  const [date, setDate] = useState("");
-  const [timeSlot, setTimeSlot] = useState("");
-  const [symptoms, setSymptoms] = useState("");
+  const [selectedDept, setSelectedDept] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const timeSlots = ["09:00", "10:00", "11:00", "14:00", "15:00", "16:00"];
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!date || !timeSlot || !symptoms) return;
+  async function handleBookToken() {
+    if (!selectedDept) return;
+    const dept = DEPARTMENTS.find(d => d.id === selectedDept);
+    if (!dept || dept.tokensLeft === 0) return;
 
     setSubmitting(true);
     try {
@@ -30,17 +34,17 @@ export default function BookAppointment() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          doctorId: "doc-1", // Hardcoded to our demo doctor
-          date,
-          timeSlot,
-          symptoms
+          doctorId: "doc-1", // Hardcoded for demo
+          date: new Date().toISOString().split("T")[0],
+          timeSlot: dept.estWait,
+          symptoms: "Token Booking"
         })
       });
 
       if (res.ok) {
         router.push("/app/patient");
       } else {
-        alert("Failed to book appointment.");
+        alert("Failed to generate token.");
       }
     } catch (err) {
       alert("An error occurred.");
@@ -50,75 +54,88 @@ export default function BookAppointment() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <PageHeader 
-        title="Book Appointment" 
-        description="Schedule an OPD consultation with a doctor." 
+        title="Generate OPD Token" 
+        description="Select a department to view current queue status and book your token." 
       />
 
-      <div className="max-w-2xl mx-auto border rounded-xl p-6 bg-background">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Doctor</label>
-            <div className="p-3 border rounded-md bg-muted/50">
-              <p className="font-medium">Dr. Emily Chen</p>
-              <p className="text-sm text-muted-foreground">General Medicine</p>
-            </div>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">1. Select Department</h3>
+          <div className="grid gap-4">
+            {DEPARTMENTS.map((dept) => (
+              <Card 
+                key={dept.id} 
+                className={`cursor-pointer transition-all hover:border-primary ${selectedDept === dept.id ? "border-primary ring-1 ring-primary bg-primary/5" : ""} ${dept.tokensLeft === 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                onClick={() => dept.tokensLeft > 0 && setSelectedDept(dept.id)}
+              >
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-lg">{dept.name}</h4>
+                    <p className="text-sm text-muted-foreground">{dept.doctor}</p>
+                  </div>
+                  <div className="text-right">
+                    {dept.tokensLeft > 0 ? (
+                      <span className="inline-flex items-center text-sm font-medium text-green-600 bg-green-100 px-2.5 py-0.5 rounded-full">
+                        {dept.tokensLeft} tokens left
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center text-sm font-medium text-red-600 bg-red-100 px-2.5 py-0.5 rounded-full">
+                        Full
+                      </span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date</label>
-              <Input 
-                type="date" 
-                required 
-                value={date} 
-                onChange={e => setDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Time Slot</label>
-              <div className="grid grid-cols-3 gap-2">
-                {timeSlots.map(slot => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setTimeSlot(slot)}
-                    className={`py-2 px-3 text-sm rounded-md border transition-colors ${
-                      timeSlot === slot 
-                        ? "bg-primary text-primary-foreground border-primary" 
-                        : "bg-background hover:bg-muted"
-                    }`}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">2. Queue Status</h3>
+          {selectedDept ? (
+            <Card className="border-2 border-primary/20 shadow-md">
+              <CardHeader className="bg-primary/5 pb-4">
+                <CardTitle>{DEPARTMENTS.find(d => d.id === selectedDept)?.name} OPD</CardTitle>
+                <CardDescription>Current live queue status</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col space-y-1">
+                    <span className="flex items-center text-sm text-muted-foreground"><Building2 className="w-4 h-4 mr-2"/> OPD Timings</span>
+                    <span className="font-medium">{DEPARTMENTS.find(d => d.id === selectedDept)?.openTime} - {DEPARTMENTS.find(d => d.id === selectedDept)?.closeTime}</span>
+                  </div>
+                  <div className="flex flex-col space-y-1">
+                    <span className="flex items-center text-sm text-muted-foreground"><Ticket className="w-4 h-4 mr-2"/> Available Tokens</span>
+                    <span className="font-medium text-lg">{DEPARTMENTS.find(d => d.id === selectedDept)?.tokensLeft}</span>
+                  </div>
+                  <div className="flex flex-col space-y-1 col-span-2">
+                    <span className="flex items-center text-sm text-muted-foreground"><Clock className="w-4 h-4 mr-2"/> Estimated Turn Time</span>
+                    <span className="font-medium text-xl text-primary">{DEPARTMENTS.find(d => d.id === selectedDept)?.estWait}</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                  <Button 
+                    className="w-full text-lg h-12" 
+                    onClick={handleBookToken}
+                    disabled={submitting}
                   >
-                    {slot}
-                  </button>
-                ))}
+                    {submitting ? "Generating..." : "Generate My Token Now"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-dashed flex items-center justify-center h-48 bg-muted/20">
+              <div className="text-center text-muted-foreground flex flex-col items-center">
+                <Users className="w-8 h-8 mb-2 opacity-20" />
+                <p>Select a department to view<br/>live token availability.</p>
               </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Symptoms & Reason for Visit</label>
-            <Textarea 
-              placeholder="Please briefly describe your symptoms..."
-              required
-              rows={4}
-              value={symptoms}
-              onChange={e => setSymptoms(e.target.value)}
-            />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <Button type="button" variant="outline" className="w-full" onClick={() => router.back()}>
-              Cancel
-            </Button>
-            <Button type="submit" className="w-full" disabled={submitting || !date || !timeSlot || !symptoms}>
-              {submitting ? "Booking..." : "Confirm Booking"}
-            </Button>
-          </div>
-        </form>
+            </Card>
+          )}
+        </div>
       </div>
     </div>
   );
