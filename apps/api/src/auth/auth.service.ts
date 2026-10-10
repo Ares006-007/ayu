@@ -48,9 +48,7 @@ export class AuthService {
       roles: ['PATIENT'] 
     };
     
-    const accessToken = this.jwtService.sign(payload, {
-      expiresIn: '15m', // Short-lived access token
-    });
+    const accessToken = this.jwtService.sign(payload);
     
     const refreshToken = randomBytes(32).toString('hex');
     // NOTE: Here you would store the refresh token in Redis mapped to the user ID

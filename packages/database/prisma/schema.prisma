@@ -1,10 +1,10 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../../node_modules/@prisma/client"
+  output   = "../../../node_modules/.prisma/client"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -51,7 +51,7 @@ model OrganizationMembership {
   organizationId String
   userId         String
   role           String   // ADMIN, DOCTOR, PHARMACIST, STAFF
-  permissions    String[] // JSON array of permissions
+  permissions    String   // JSON array of permissions
   status         String   @default("ACTIVE")
 
   organization Organization @relation(fields: [organizationId], references: [id])
@@ -456,4 +456,141 @@ model AuditLog {
   userAgent      String?
   metadata       String? // JSON containing safe context data
   createdAt      DateTime @default(now())
+}
+
+// ------------------------------------------------------
+// AI Pipeline & Orchestration
+// ------------------------------------------------------
+
+model AIProcessingJob {
+  id                    String    @id @default(uuid())
+  useCase               String
+  status                String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, NEEDS_REVIEW
+  requestedBy           String
+  organizationId        String
+  patientId             String?
+  documentId            String?
+  primaryModelAlias     String?
+  secondaryModelAlias   String?
+  reviewerModelAlias    String?
+  promptVersion         String?
+  schemaVersion         String?
+  gatewayPolicyVersion  String?
+  authorizationPurpose  String?
+  consentReference      String?
+  startedAt             DateTime?
+  completedAt           DateTime?
+  failureCategory       String?
+  retryCount            Int       @default(0)
+  requiresHumanReview   Boolean   @default(false)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  runs              AIModelRun[]
+  extractionResults AIExtractionResult[]
+  reviewTasks       AIReviewTask[]
+}
+
+model AIModelRun {
+  id               String    @id @default(uuid())
+  jobId            String
+  modelAlias       String
+  providerModelId  String
+  provider         String
+  requestChecksum  String?
+  responseChecksum String?
+  promptVersion    String?
+  schemaVersion    String?
+  latencyMs        Int?
+  tokenUsage       Int?
+  status           String // SUCCESS, FAILURE
+  failureCategory  String?
+  createdAt        DateTime  @default(now())
+
+  job AIProcessingJob @relation(fields: [jobId], references: [id])
+  extractionResults AIExtractionResult[]
+}
+
+model AIExtractionResult {
+  id                        String   @id @default(uuid())
+  jobId                     String
+  modelRunId                String
+  encryptedStructuredResult String // Stored securely
+  confidenceData            String? // JSON
+  validationWarnings        String? // JSON
+  sourceEvidence            String? // JSON
+  createdAt                 DateTime @default(now())
+
+  job      AIProcessingJob @relation(fields: [jobId], references: [id])
+  modelRun AIModelRun      @relation(fields: [modelRunId], references: [id])
+}
+
+model AIReviewTask {
+  id             String    @id @default(uuid())
+  jobId          String
+  reviewType     String
+  assignedRole   String
+  assignedUserId String?
+  status         String    @default("PENDING") // PENDING, RESOLVED
+  conflictFields String? // JSON
+  resolution     String? // JSON
+  resolvedBy     String?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  job AIProcessingJob @relation(fields: [jobId], references: [id])
+}
+
+model AIModelDefinition {
+  id                 String   @id @default(uuid())
+  alias              String   @unique
+  providerModelId    String
+  capabilities       String // JSON
+  approvedUseCases   String // JSON
+  approvedDataClasses String // JSON
+  enabled            Boolean  @default(true)
+  productionApproved Boolean  @default(false)
+  evaluationStatus   String?
+  configuration      String? // JSON
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model AIRoutingPolicy {
+  id                  String   @id @default(uuid())
+  useCase             String   @unique
+  primaryModelAlias   String
+  secondaryModelAlias String?
+  reviewerModelAlias  String?
+  conditions          String? // JSON
+  humanReviewPolicy   String? // JSON
+  policyVersion       String
+  enabled             Boolean  @default(true)
+  approvedBy          String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model AIGatewayApproval {
+  id                      String   @id @default(uuid())
+  gatewayIdentifier       String   @unique
+  status                  String
+  approvedDataCategories  String // JSON
+  approvedUseCases        String // JSON
+  approvedModels          String // JSON
+  approvedProviders       String // JSON
+  retentionPolicy         String
+  trainingUsePolicy       String
+  processingRegions       String // JSON
+  encryptionRequirements  String // JSON
+  approvalOwner           String
+  securityReviewReference String?
+  legalReviewReference    String?
+  clinicalReviewReference String?
+  effectiveDate           DateTime
+  reviewDate              DateTime?
+  policyVersion           String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 }
