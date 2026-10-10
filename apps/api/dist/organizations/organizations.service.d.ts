@@ -4,12 +4,19 @@ export declare class OrganizationsService {
     constructor(prisma: PrismaService);
     findAll(): Promise<{
         id: string;
+        name: string;
         status: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        type: string;
         timezone: string;
+        type: string;
+    }[]>;
+    findByIds(ids: string[]): Promise<{
+        id: string;
+        name: string;
+        status: string;
+        timezone: string;
+        type: string;
     }[]>;
     findOne(id: string): Promise<{
         memberships: ({
@@ -20,18 +27,20 @@ export declare class OrganizationsService {
         } & {
             id: string;
             status: string;
-            organizationId: string;
+            createdAt: Date;
+            updatedAt: Date;
             userId: string;
+            organizationId: string;
             role: string;
             permissions: string;
         })[];
     } & {
         id: string;
+        name: string;
         status: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        type: string;
         timezone: string;
+        type: string;
     }>;
 }

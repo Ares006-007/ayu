@@ -58,14 +58,71 @@ let TelegramService = TelegramService_1 = class TelegramService {
                 ctx.reply(`Welcome to AYU! We're processing your link code: ${payload}`);
             }
             else {
-                ctx.reply('Welcome to AYU! I am your personal health assistant. To link your account, please log in to the AYU patient portal and click "Connect to Telegram".');
+                ctx.reply('Welcome to AYU! I am your personal health assistant. To link your account, please log in to the AYU patient portal and click "Connect to Telegram".\n\nTry /hospitals to see available mock clinics.');
             }
         });
         this.bot.help((ctx) => {
-            ctx.reply('AYU Bot Help:\n- /start: Register or link account\n- /reminders: View upcoming meds');
+            ctx.reply('AYU Bot Help:\n- /start: Register or link account\n- /reminders: View upcoming meds\n- /hospitals: List available hospitals\n- /book <hospital_name>: Book an OPD token');
         });
         this.bot.command('reminders', (ctx) => {
             ctx.reply('You have no pending reminders today. Stay healthy!');
+        });
+        this.bot.command('hospitals', async (ctx) => {
+            try {
+                const { PrismaClient } = await import('@prisma/client');
+                const prisma = new PrismaClient();
+                const hospitals = await prisma.organization.findMany({ where: { type: 'CLINIC' } });
+                if (hospitals.length === 0) {
+                    return ctx.reply('No hospitals found. Did you run the seed script?');
+                }
+                let msg = '🏥 *Available Hospitals for OPD*\n\n';
+                hospitals.forEach(h => {
+                    msg += `• *${h.name}*\n`;
+                });
+                msg += '\nTo book a token, reply with: `/book Hospital Name`';
+                await ctx.replyWithMarkdown(msg);
+            }
+            catch (err) {
+                ctx.reply('Error fetching hospitals.');
+            }
+        });
+        this.bot.command('book', async (ctx) => {
+            const hospitalName = ctx.message.text.replace('/book ', '').trim();
+            if (!hospitalName || hospitalName === '/book') {
+                return ctx.reply('Please specify a hospital name. Example: `/book Citycare General Hospital`', { parse_mode: 'Markdown' });
+            }
+            try {
+                const { PrismaClient } = await import('@prisma/client');
+                const prisma = new PrismaClient();
+                const hospital = await prisma.organization.findFirst({
+                    where: { name: { contains: hospitalName } }
+                });
+                if (!hospital) {
+                    return ctx.reply(`Sorry, I couldn't find a hospital matching "${hospitalName}". Try /hospitals to see the list.`);
+                }
+                const doctors = await prisma.doctor.findMany({
+                    where: { clinicId: hospital.id },
+                    include: { user: true }
+                });
+                if (doctors.length === 0) {
+                    return ctx.reply(`Found ${hospital.name}, but there are no doctors available for booking right now.`);
+                }
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(10, 0, 0, 0);
+                const doctor = doctors[0];
+                const confirmMsg = `✅ *OPD Token Confirmed*\n\n` +
+                    `🏥 *Hospital:* ${hospital.name}\n` +
+                    `👨‍⚕️ *Doctor ID:* ${doctor.registrationNumber} (${doctor.specialty})\n` +
+                    `📅 *Date:* ${tomorrow.toDateString()}\n` +
+                    `⏰ *Time:* 10:00 AM\n\n` +
+                    `Please arrive 15 minutes early.`;
+                await ctx.replyWithMarkdown(confirmMsg);
+            }
+            catch (err) {
+                this.logger.error(`Booking error: ${err.message}`);
+                ctx.reply('There was an error processing your booking request.');
+            }
         });
         this.bot.on('text', async (ctx) => {
             if (!ctx.message || !('text' in ctx.message))
@@ -75,7 +132,7 @@ let TelegramService = TelegramService_1 = class TelegramService {
                 const modelId = await this.modelRegistryService.resolveModelId('general-text-fallback');
                 const response = await this.aiGatewayService.generateText({
                     model: modelId,
-                    systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses.',
+                    systemPrompt: 'You are AYUSH, a helpful healthcare assistant for the AYU platform. Be concise, polite, and helpful. Do not provide medical diagnoses. If the user wants to book an appointment, tell them to use the /hospitals and /book commands.',
                     userPrompt: ctx.message.text,
                     maxTokens: 500,
                     temperature: 0.7

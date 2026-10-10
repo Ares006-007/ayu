@@ -14,7 +14,7 @@ from ..domain.models import CanonicalMedicalImage, RadiomicsResult
 logger = structlog.get_logger(__name__)
 
 class ControlledRadiomicsExtractor:
-    def __init__(self, parameters_dir: Path):
+    def __init__(self, parameters_dir: Path) -> None:
         self.parameters_dir = parameters_dir
         
     def extract(

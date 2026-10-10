@@ -18,6 +18,8 @@ export declare class AuditService {
     logEvent(event: AuditEvent): Promise<{
         id: string;
         createdAt: Date;
+        userAgent: string | null;
+        ipAddress: string | null;
         organizationId: string | null;
         actorId: string;
         action: string;
@@ -25,8 +27,6 @@ export declare class AuditService {
         resourceId: string;
         outcome: string;
         requestId: string | null;
-        ipAddress: string | null;
-        userAgent: string | null;
         metadata: string | null;
     } | undefined>;
 }

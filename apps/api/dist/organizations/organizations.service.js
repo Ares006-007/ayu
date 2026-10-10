@@ -17,6 +17,18 @@ let OrganizationsService = class OrganizationsService {
     async findAll() {
         return this.prisma.organization.findMany();
     }
+    async findByIds(ids) {
+        return this.prisma.organization.findMany({
+            where: { id: { in: ids } },
+            select: {
+                id: true,
+                type: true,
+                name: true,
+                status: true,
+                timezone: true,
+            },
+        });
+    }
     async findOne(id) {
         const org = await this.prisma.organization.findUnique({
             where: { id },

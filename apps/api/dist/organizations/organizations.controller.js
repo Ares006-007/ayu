@@ -10,41 +10,63 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, ForbiddenException, Req } from '@nestjs/common';
 import { OrganizationsService } from './organizations.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../auth/guards/roles.guard.js';
-import { Roles } from '../auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { AuditService } from '../audit/audit.service.js';
 let OrganizationsController = class OrganizationsController {
     orgService;
-    constructor(orgService) {
+    auditService;
+    constructor(orgService, auditService) {
         this.orgService = orgService;
+        this.auditService = auditService;
     }
-    async findAll() {
-        return this.orgService.findAll();
+    async findAll(user) {
+        const orgIds = user.memberships.map((m) => m.organizationId);
+        if (!orgIds.length) {
+            return [];
+        }
+        return this.orgService.findByIds(orgIds);
     }
-    async findOne(id) {
+    async findOne(id, user, request) {
+        const membership = user.memberships.find((m) => m.organizationId === id);
+        if (!membership) {
+            await this.auditService.logEvent({
+                actorId: user.userId,
+                action: 'ACCESS_DENIED',
+                resourceType: 'Organization',
+                resourceId: id,
+                outcome: 'DENIED',
+                ipAddress: request.ip,
+                userAgent: request.headers['user-agent'],
+            });
+            throw new ForbiddenException('You do not have access to this organization.');
+        }
         return this.orgService.findOne(id);
     }
 };
 __decorate([
     Get(),
-    Roles('PLATFORM_ADMIN', 'DOCTOR', 'PHARMACIST', 'STAFF'),
+    __param(0, CurrentUser()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], OrganizationsController.prototype, "findAll", null);
 __decorate([
     Get(':id'),
     __param(0, Param('id')),
+    __param(1, CurrentUser()),
+    __param(2, Req()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Object, Object]),
     __metadata("design:returntype", Promise)
 ], OrganizationsController.prototype, "findOne", null);
 OrganizationsController = __decorate([
-    UseGuards(JwtAuthGuard, RolesGuard),
+    UseGuards(JwtAuthGuard),
     Controller('v1/organizations'),
-    __metadata("design:paramtypes", [OrganizationsService])
+    __metadata("design:paramtypes", [OrganizationsService,
+        AuditService])
 ], OrganizationsController);
 export { OrganizationsController };
 //# sourceMappingURL=organizations.controller.js.map

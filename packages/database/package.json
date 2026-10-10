@@ -7,7 +7,8 @@
   "scripts": {
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
-    "studio": "prisma studio"
+    "studio": "prisma studio",
+    "seed:auth": "tsx prisma/seed-auth.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0"

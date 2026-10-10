@@ -1,17 +1,19 @@
+import type { Request } from 'express';
 import { OrganizationsService } from './organizations.service.js';
+import { AuditService } from '../audit/audit.service.js';
+import type { AuthenticatedUser } from '../auth/types.js';
 export declare class OrganizationsController {
     private readonly orgService;
-    constructor(orgService: OrganizationsService);
-    findAll(): Promise<{
+    private readonly auditService;
+    constructor(orgService: OrganizationsService, auditService: AuditService);
+    findAll(user: AuthenticatedUser): Promise<{
         id: string;
-        status: string;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
-        type: string;
+        status: string;
         timezone: string;
+        type: string;
     }[]>;
-    findOne(id: string): Promise<{
+    findOne(id: string, user: AuthenticatedUser, request: Request): Promise<{
         memberships: ({
             user: {
                 id: string;
@@ -20,18 +22,20 @@ export declare class OrganizationsController {
         } & {
             id: string;
             status: string;
-            organizationId: string;
+            createdAt: Date;
+            updatedAt: Date;
             userId: string;
+            organizationId: string;
             role: string;
             permissions: string;
         })[];
     } & {
         id: string;
+        name: string;
         status: string;
         createdAt: Date;
         updatedAt: Date;
-        name: string;
-        type: string;
         timezone: string;
+        type: string;
     }>;
 }

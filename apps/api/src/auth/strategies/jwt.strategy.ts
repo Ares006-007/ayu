@@ -2,38 +2,47 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { Request } from 'express';
+import { AuthContextService } from '../services/auth-context.service.js';
+import { parseWorkspaceCookie } from '../utils/cookie.util.js';
+import type { TokenPayload } from '../auth.service.js';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly authContextService: AuthContextService) {
     super({
-      // We will extract JWT from cookies or Authorization header
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          let token = null;
-          if (request && request.cookies) {
-            token = request.cookies['access_token'];
+          if (request?.cookies?.access_token) {
+            return request.cookies.access_token;
           }
-          if (!token && request.headers.authorization) {
-            token = request.headers.authorization.split(' ')[1];
+          if (request.headers.authorization?.startsWith('Bearer ')) {
+            return request.headers.authorization.split(' ')[1];
           }
-          return token;
+          return null;
         },
       ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'super-secret-default-key-change-in-prod',
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: any) {
+  async validate(request: Request, payload: TokenPayload) {
     if (!payload.sub) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Invalid session');
     }
-    // Returning the user payload mapped to request.user
-    return { 
-      userId: payload.sub, 
-      email: payload.email, 
-      roles: payload.roles || [] 
-    };
+
+    const workspaceCookie = parseWorkspaceCookie(request.cookies?.ayu_workspace);
+    const user = await this.authContextService.buildAuthenticatedUser(
+      payload.sub,
+      workspaceCookie?.workspace,
+      workspaceCookie?.organizationId,
+    );
+
+    if (!user) {
+      throw new UnauthorizedException('Account is not active');
+    }
+
+    return user;
   }
 }

@@ -5,10 +5,14 @@ export declare class UsersService {
     findByEmail(email: string): Promise<{
         id: string;
         email: string;
+        name: string | null;
         phone: string | null;
         passwordHash: string | null;
         externalAuthId: string | null;
         status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
         lastLoginAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
@@ -16,10 +20,14 @@ export declare class UsersService {
     findById(id: string): Promise<{
         id: string;
         email: string;
+        name: string | null;
         phone: string | null;
         passwordHash: string | null;
         externalAuthId: string | null;
         status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
         lastLoginAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
@@ -27,10 +35,86 @@ export declare class UsersService {
     updateLastLogin(id: string): Promise<{
         id: string;
         email: string;
+        name: string | null;
         phone: string | null;
         passwordHash: string | null;
         externalAuthId: string | null;
         status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
+        lastLoginAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    recordFailedLogin(id: string, attempts: number, lockedUntil: Date | null): Promise<{
+        id: string;
+        email: string;
+        name: string | null;
+        phone: string | null;
+        passwordHash: string | null;
+        externalAuthId: string | null;
+        status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
+        lastLoginAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    resetLoginAttempts(id: string): Promise<{
+        id: string;
+        email: string;
+        name: string | null;
+        phone: string | null;
+        passwordHash: string | null;
+        externalAuthId: string | null;
+        status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
+        lastLoginAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    create(data: {
+        email: string;
+        externalAuthId?: string;
+        status?: string;
+        passwordHash?: string;
+        name?: string | null;
+        emailVerifiedAt?: Date | null;
+    }): Promise<{
+        id: string;
+        email: string;
+        name: string | null;
+        phone: string | null;
+        passwordHash: string | null;
+        externalAuthId: string | null;
+        status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
+        lastLoginAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    update(id: string, data: Partial<{
+        externalAuthId: string;
+        name: string | null;
+        passwordHash: string;
+        emailVerifiedAt: Date | null;
+    }>): Promise<{
+        id: string;
+        email: string;
+        name: string | null;
+        phone: string | null;
+        passwordHash: string | null;
+        externalAuthId: string | null;
+        status: string;
+        failedLoginAttempts: number;
+        lockedUntil: Date | null;
+        emailVerifiedAt: Date | null;
         lastLoginAt: Date | null;
         createdAt: Date;
         updatedAt: Date;

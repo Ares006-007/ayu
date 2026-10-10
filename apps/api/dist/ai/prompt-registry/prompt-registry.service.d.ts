@@ -1,14 +1,8 @@
-export interface PromptDefinition {
-    id: string;
-    version: string;
-    useCase: string;
-    systemPrompt: string;
-    approvalStatus: 'APPROVED' | 'DRAFT';
-}
+import { PromptDefinition, AIUseCase } from '../types.js';
 export declare class PromptRegistryService {
     private readonly logger;
     private readonly prompts;
     constructor();
     private registerBuiltInPrompts;
-    getPrompt(useCase: string): PromptDefinition;
+    getPrompt(useCase: AIUseCase): PromptDefinition;
 }

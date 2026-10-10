@@ -26,6 +26,32 @@ let UsersService = class UsersService {
             data: { lastLoginAt: new Date() },
         });
     }
+    async recordFailedLogin(id, attempts, lockedUntil) {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                failedLoginAttempts: attempts,
+                lockedUntil,
+                status: lockedUntil ? 'LOCKED' : 'ACTIVE',
+            },
+        });
+    }
+    async resetLoginAttempts(id) {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                failedLoginAttempts: 0,
+                lockedUntil: null,
+                status: 'ACTIVE',
+            },
+        });
+    }
+    async create(data) {
+        return this.prisma.user.create({ data });
+    }
+    async update(id, data) {
+        return this.prisma.user.update({ where: { id }, data });
+    }
 };
 UsersService = __decorate([
     Injectable(),

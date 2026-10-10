@@ -8,9 +8,10 @@ import { OrganizationsModule } from './organizations/organizations.module.js';
 import { AuditModule } from './audit/audit.module.js';
 import { TelegramModule } from './telegram/telegram.module.js';
 import { AiModule } from './ai/ai.module.js';
+import { PatientsModule } from './patients/patients.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, TelegramModule, AiModule],
+  imports: [DatabaseModule, AuditModule, UsersModule, AuthModule, OrganizationsModule, PatientsModule, TelegramModule, AiModule],
   controllers: [AppController],
   providers: [AppService],
 })

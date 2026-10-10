@@ -1,23 +1,48 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards, ForbiddenException, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { OrganizationsService } from './organizations.service.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
-import { RolesGuard } from '../auth/guards/roles.guard.js';
-import { Roles } from '../auth/decorators/roles.decorator.js';
+import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
+import { AuditService } from '../audit/audit.service.js';
+import type { AuthenticatedUser } from '../auth/types.js';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('v1/organizations')
 export class OrganizationsController {
-  constructor(private readonly orgService: OrganizationsService) {}
+  constructor(
+    private readonly orgService: OrganizationsService,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Get()
-  @Roles('PLATFORM_ADMIN', 'DOCTOR', 'PHARMACIST', 'STAFF') // Patients usually don't list all organizations broadly unless it's a specific public endpoint
-  async findAll() {
-    return this.orgService.findAll();
+  async findAll(@CurrentUser() user: AuthenticatedUser) {
+    const orgIds = user.memberships.map((m) => m.organizationId);
+    if (!orgIds.length) {
+      return [];
+    }
+    return this.orgService.findByIds(orgIds);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    // In a real implementation, you must check if the CurrentUser has permission to view this specific organization
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request,
+  ) {
+    const membership = user.memberships.find((m) => m.organizationId === id);
+    if (!membership) {
+      await this.auditService.logEvent({
+        actorId: user.userId,
+        action: 'ACCESS_DENIED',
+        resourceType: 'Organization',
+        resourceId: id,
+        outcome: 'DENIED',
+        ipAddress: request.ip,
+        userAgent: request.headers['user-agent'],
+      });
+      throw new ForbiddenException('You do not have access to this organization.');
+    }
+
     return this.orgService.findOne(id);
   }
 }

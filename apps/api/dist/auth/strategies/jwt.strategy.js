@@ -10,39 +10,44 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { AuthContextService } from '../services/auth-context.service.js';
+import { parseWorkspaceCookie } from '../utils/cookie.util.js';
 let JwtStrategy = class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor() {
+    authContextService;
+    constructor(authContextService) {
         super({
             jwtFromRequest: ExtractJwt.fromExtractors([
                 (request) => {
-                    let token = null;
-                    if (request && request.cookies) {
-                        token = request.cookies['access_token'];
+                    if (request?.cookies?.access_token) {
+                        return request.cookies.access_token;
                     }
-                    if (!token && request.headers.authorization) {
-                        token = request.headers.authorization.split(' ')[1];
+                    if (request.headers.authorization?.startsWith('Bearer ')) {
+                        return request.headers.authorization.split(' ')[1];
                     }
-                    return token;
+                    return null;
                 },
             ]),
             ignoreExpiration: false,
             secretOrKey: process.env.JWT_SECRET || 'super-secret-default-key-change-in-prod',
+            passReqToCallback: true,
         });
+        this.authContextService = authContextService;
     }
-    async validate(payload) {
+    async validate(request, payload) {
         if (!payload.sub) {
-            throw new UnauthorizedException();
+            throw new UnauthorizedException('Invalid session');
         }
-        return {
-            userId: payload.sub,
-            email: payload.email,
-            roles: payload.roles || []
-        };
+        const workspaceCookie = parseWorkspaceCookie(request.cookies?.ayu_workspace);
+        const user = await this.authContextService.buildAuthenticatedUser(payload.sub, workspaceCookie?.workspace, workspaceCookie?.organizationId);
+        if (!user) {
+            throw new UnauthorizedException('Account is not active');
+        }
+        return user;
     }
 };
 JwtStrategy = __decorate([
     Injectable(),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [AuthContextService])
 ], JwtStrategy);
 export { JwtStrategy };
 //# sourceMappingURL=jwt.strategy.js.map

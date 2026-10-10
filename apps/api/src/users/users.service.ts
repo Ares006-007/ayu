@@ -19,4 +19,49 @@ export class UsersService {
       data: { lastLoginAt: new Date() },
     });
   }
+
+  async recordFailedLogin(id: string, attempts: number, lockedUntil: Date | null) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        failedLoginAttempts: attempts,
+        lockedUntil,
+        status: lockedUntil ? 'LOCKED' : 'ACTIVE',
+      },
+    });
+  }
+
+  async resetLoginAttempts(id: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+        status: 'ACTIVE',
+      },
+    });
+  }
+
+  async create(data: {
+    email: string;
+    externalAuthId?: string;
+    status?: string;
+    passwordHash?: string;
+    name?: string | null;
+    emailVerifiedAt?: Date | null;
+  }) {
+    return this.prisma.user.create({ data });
+  }
+
+  async update(
+    id: string,
+    data: Partial<{
+      externalAuthId: string;
+      name: string | null;
+      passwordHash: string;
+      emailVerifiedAt: Date | null;
+    }>,
+  ) {
+    return this.prisma.user.update({ where: { id }, data });
+  }
 }
