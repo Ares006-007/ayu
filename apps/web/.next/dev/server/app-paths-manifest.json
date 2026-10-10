@@ -1,7 +1,0 @@
-{
-  "/(dashboard)/patient/invoices/page": "app/(dashboard)/patient/invoices/page.js",
-  "/(dashboard)/patient/page": "app/(dashboard)/patient/page.js",
-  "/(dashboard)/patient/reports/page": "app/(dashboard)/patient/reports/page.js",
-  "/demo/page": "app/demo/page.js",
-  "/page": "app/page.js"
-}

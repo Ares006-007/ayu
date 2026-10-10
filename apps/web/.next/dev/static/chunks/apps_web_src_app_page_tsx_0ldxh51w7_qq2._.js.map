@@ -1,6 +1,0 @@
-{
-  "version": 3,
-  "sources": [],
-  "sections": [
-    {"offset": {"line": 4, "column": 0}, "map": {"version":3,"sources":["file:///C:/Users/Shaik%20Mohammad%20Ajhaj/ayu/apps/web/src/app/page.tsx"],"sourcesContent":["\"use client\";\n\nimport { useEffect } from \"react\";\nimport { useRouter } from \"next/navigation\";\nimport { useRole } from \"@/components/role-provider\";\n\nexport default function RootPage() {\n  const router = useRouter();\n  const { role, isLoading } = useRole();\n\n  useEffect(() => {\n    if (!isLoading) {\n      if (role) {\n        router.push(`/${role}`);\n      } else {\n        router.push(\"/demo\");\n      }\n    }\n  }, [role, isLoading, router]);\n\n  return <div className=\"flex h-screen items-center justify-center\">Redirecting...</div>;\n}\n"],"names":["RootPage","router","role","isLoading","push","className"],"mappings":";;;;;AAEA;AACA;AACA;;;AAJA;;;;AAMe,SAASA;;IACtB,MAAMC,SAAS,IAAA,iKAAS;IACxB,MAAM,EAAEC,IAAI,EAAEC,SAAS,EAAE,GAAG,IAAA,mKAAO;IAEnC,IAAA,yLAAS;8BAAC;YACR,IAAI,CAACA,WAAW;gBACd,IAAID,MAAM;oBACRD,OAAOG,IAAI,CAAC,CAAC,CAAC,EAAEF,MAAM;gBACxB,OAAO;oBACLD,OAAOG,IAAI,CAAC;gBACd;YACF;QACF;6BAAG;QAACF;QAAMC;QAAWF;KAAO;IAE5B,qBAAO,4MAAC;QAAII,WAAU;kBAA4C;;;;;;AACpE;GAfwBL;;QACP,iKAAS;QACI,mKAAO;;;KAFbA"}}]
-}
