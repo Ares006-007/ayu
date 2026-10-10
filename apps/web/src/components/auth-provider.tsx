@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const refreshSession = useCallback(async () => {
+    const savedWorkspace = typeof window !== 'undefined' ? localStorage.getItem('mockWorkspace') : null;
     const mockUser: any = {
       user: {
         id: "b691e109-4592-4177-a030-c915604bc664",
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       memberships: [],
       availableWorkspaces: [{ type: "patient", label: "Patient" }, { type: "doctor", label: "Doctor" }],
       defaultWorkspace: "patient",
-      activeWorkspace: "patient",
+      activeWorkspace: savedWorkspace || "patient",
     };
     setUser(mockUser);
     setStatus("authenticated");
@@ -116,11 +117,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchWorkspace = useCallback(
     async (workspace: WorkspaceType, organizationId?: string) => {
-      const me = await authApi.switchWorkspace(workspace, organizationId);
+      localStorage.setItem('mockWorkspace', workspace);
+      const me: any = {
+        ...user,
+        activeWorkspace: workspace
+      };
       setUser(me);
       router.push(workspacePath(workspace));
     },
-    [router],
+    [router, user],
   );
 
   useEffect(() => {
